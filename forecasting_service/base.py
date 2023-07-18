@@ -1,9 +1,10 @@
 import json
 from datetime import datetime
 from time import sleep
-
+import time
 import ray
-from more_utils.service import TimeseriesService
+import os
+from more_utils.time_series import TimeseriesFactory
 from more_utils.util.logging import configure_logger
 from ray.tune.utils.util import SafeFallbackEncoder
 from sail.models.auto_ml.auto_pipeline import SAILAutoPipeline
@@ -29,13 +30,22 @@ class BaseService:
         self.modelardb_conn = modelardb_conn
         self.message_broker = message_broker
         self.data_dir = data_dir
-
         self.client = message_broker.client()
         self.logger.info("Connected to Message Broker.")
         self.consumer = self.client.get_consumer()
         self.publisher = self.client.get_publisher()
-        self._ts_service = TimeseriesService(source_db_conn=modelardb_conn)
+        self._ts_factory = TimeseriesFactory(source_db_conn=modelardb_conn)
         self.logger.info("Connected to ModelarDB.")
+
+    def create_experiment_directory(self, data_dir):
+        while True:
+            exp_name = "ForecastingExperiment" + "_" + time.strftime("%d-%m-%Y_%H:%M:%S")
+            exp_dir = os.path.join(data_dir, exp_name)
+            if os.path.exists(exp_dir) and os.path.isdir(exp_dir):
+                continue
+            os.makedirs(exp_dir, exist_ok=False)
+            break
+        return exp_dir
 
     def load_or_create_model(self, configs):
         if configs["model_path"]:
@@ -50,7 +60,7 @@ class BaseService:
         return model
 
     def get_query_session(self, configs):
-        time_series = self._ts_service.get_time_series(
+        time_series = self._ts_factory.create_time_series(
             model_table=configs["model_table"],
             from_date=configs["from_date"],
             to_date=configs["to_date"],
@@ -94,6 +104,9 @@ class BaseService:
 
     def send_response(self, json_message):
         ...
+    
+    def save_model_instance(self, model):
+        model.save_model(os.path.join(self.exp_dir, "model"))
 
     def ts_batch_validation(self, ts_batch, columns):
         if ts_batch.shape[0] <= 0:
@@ -136,6 +149,9 @@ class BaseService:
             run_configs = mh.get_message()
             self.log_config(run_configs["time_series"])
 
+            self.exp_dir = self.create_experiment_directory(self.data_dir)
+            self.logger.info(f"Experiment directory created: {self.exp_dir}")
+
             model = self.load_or_create_model(run_configs["sail"])
             query_session = self.get_query_session(run_configs["time_series"])
             target, timestamp_col, fit_params = self.get_training_params(run_configs)
@@ -146,7 +162,10 @@ class BaseService:
                 )
                 sleep(run_configs["time_series"]["data_ingestion_freq"])
 
-            self.logger.info(f"Task finished successfully. Data directory: {self.data_dir}\n")
+            # save trained model instance
+            self.save_model_instance(model)
+
+            self.logger.info(f"Task finished successfully. Model saved to {self.exp_dir}/model \n")
 
         except Exception as e:
             self.logger.error(f"Error processing new request:")

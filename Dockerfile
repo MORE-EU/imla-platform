@@ -16,3 +16,6 @@ ADD forecasting_service /service/forecasting_service
 
 ## Set working directory
 WORKDIR /service
+
+## ENTRYPOINT
+ENTRYPOINT ["python", "forecasting_service/run.py"]
