@@ -19,7 +19,7 @@ services:
       RABBITMQ_PORT: ${RABBITMQ_PORT}
       RABBITMQ_CONSUMER_QUEUE: ${RABBITMQ_CONSUMER_QUEUE}
       RABBITMQ_PRODUCER_QUEUE: ${RABBITMQ_PRODUCER_QUEUE}
-      DATA_DIR: /data
+    entrypoint: ["python", "forecasting_service/run.py", "--data_dir", "/data"]
     volumes:
       - /home/dhaval/dev/data:/data
 
