@@ -1,0 +1,104 @@
+---
+sail:
+
+  model_path: null
+
+  estimators:
+    - name: logistic_reg
+      class: sail.models.river.linear_model.LogisticRegression
+      params:
+        - name: optimizer
+          class: river.optim.SGD
+          params:
+            - name: lr
+              value: 0.1
+        - name: l2
+          value: 0.0
+    - name: random_forest
+      class: sail.models.river.forest.AdaptiveRandomForestClassifier
+      params:
+        - name: n_models
+          value: 10
+
+  steps:
+    - name: Imputer
+      class: sklearn.impute.SimpleImputer
+      params:
+        - name: missing_values
+          class: numpy.nan
+        - name: strategy
+          value: mean
+    - name: standard_scalar
+      class: sail.transfomers.river.preprocessing.StandardScaler
+    - name: classifier
+      value: passthrough
+
+  sail_pipeline:
+    params:
+    - name: scoring
+      class: river.metrics.Accuracy
+    - name: verbosity
+      value: 1
+    
+  parameter_grid:
+    - classifier:
+        - logistic_reg
+      classifier__l2:
+        - 0.1
+        - 0.9
+      classifier__intercept_init:
+        - 0.2
+        - 0.5
+    - classifier:
+        - random_forest
+      classifier__n_models:
+        - 5
+        - 10
+      Imputer:
+        - passthrough
+
+  search_method: SAILTuneGridSearchCV
+  search_data_size: 1000
+  search_method_params:
+    - name: verbose
+      value: 0
+    - name: num_cpus_per_trial
+      value: 1
+    - name: max_iters
+      value: 1
+    - name: early_stopping
+      value: false
+    - name: mode
+      value: max
+    - name: scoring
+      value: accuracy
+    - name: pipeline_auto_early_stop
+      value: false
+    - name: keep_best_configurations
+      value: 2
+    - name: cluster_address
+      value: null
+
+  incremental_training: true
+
+  drift_detector:
+    class: sail.drift_detection.drift_detector.SAILDriftDetector
+    params:
+    - name: model
+      class: river.drift.EDDM
+    - name: drift_param
+      value: difference
+
+  pipeline_strategy: DetectAndIncrement
+
+time_series:
+  model_table: wind_turbine
+  target: active_power
+  timestamp_col: datetime 
+  selected_features: [] # empty means use all features
+  classes: [] # only applicable for classification problem and when incremental_training is enabled
+  from_date: null
+  to_date: null
+  data_limit: 100 # put null for all data
+  data_batch_size: 50
+  data_ingestion_freq: 0 #ingestion frequency in sec

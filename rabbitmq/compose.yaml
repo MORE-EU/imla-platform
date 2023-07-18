@@ -1,0 +1,12 @@
+---
+version: "3.8"
+services:
+  forecasting-queue:
+    image: rabbitmq:3-management-alpine
+    container_name: forecasting-queue
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+    ports:
+      - ${RABBITMQ_PORT}:${RABBITMQ_PORT}
+      - 15672:15672

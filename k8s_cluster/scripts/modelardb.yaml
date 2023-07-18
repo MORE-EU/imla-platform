@@ -1,0 +1,47 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: modelardbd-deply
+  namespace: more-demo
+  labels:
+    app: modelardbd
+spec:
+  replicas: 1
+  selector: 
+    matchLabels:
+      app: modelardbd
+  template:
+    metadata:
+      labels:
+        app: modelardbd
+    spec:
+      containers:
+      - name: modelardbd-container
+        image: dhavalsalwala/modelardb-rs:latest
+        volumeMounts:
+          - mountPath: /data
+            name: modelardbd-data
+        resources: {}
+        ports:
+        - containerPort: 9999
+      volumes:
+        - name: modelardbd-data
+          persistentVolumeClaim:
+            claimName: modelardbd-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: modelardbd-service
+  namespace: more-demo
+spec:
+  type: NodePort
+  selector:
+    app: modelardbd
+  ports:
+    - protocol: TCP
+      port: 9999
+      targetPort: 9999
+      nodePort: 31000

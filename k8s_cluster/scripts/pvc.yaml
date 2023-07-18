@@ -1,0 +1,29 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: modelardbd-pvc
+  namespace: more-demo
+spec:
+  storageClassName: modelardbd-storage
+  resources:
+    requests:
+      storage: 5Gi
+  volumeMode: Filesystem
+  accessModes:
+   - ReadWriteMany
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: forecasting-pvc
+  namespace: more-demo
+spec:
+  storageClassName: forecasting-storage
+  resources:
+    requests:
+      storage: 5Gi
+  volumeMode: Filesystem
+  accessModes:
+   - ReadWriteMany

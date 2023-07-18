@@ -1,0 +1,160 @@
+---
+- name: Ansible playbook to prepare node as K8s worker
+  hosts: localhost
+  become: yes
+  gather_facts: false
+  vars:
+    node_name: more-worker
+    k8s_ver: 1.27.*
+    containerd_ver: 1.7.0
+    calico_ver: 3.26.1
+    tmp_dir: /tmp/k8s
+    containerd_bin_path: /usr/local/bin
+    containerd_config_dir: /etc/containerd
+    k8s_keyring_dir: /etc/apt/keyrings
+
+  tasks:
+
+    - name: Running cleanup from previous runs
+      file:
+        state: absent
+        path: "{{ item }}"
+      loop:
+        - "{{ tmp_dir }}"
+        - "{{ containerd_config_dir }}"
+        - "{{ k8s_keyring_dir }}"
+
+    - name: Create directories to store cluster setup files
+      file:
+        path: "{{ item }}"
+        state: directory
+      loop:
+        - "{{ tmp_dir }}"
+        - "{{ containerd_config_dir }}"
+        - "{{ k8s_keyring_dir }}"
+
+    - name: Install packages that allow apt to be used over HTTPS
+      apt:
+        name: "{{ packages }}"
+        state: present
+        update_cache: yes
+      vars:
+        packages:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - gnupg-agent
+        - software-properties-common
+
+    - name: Load Kernel modules & settings
+      shell: |
+        modprobe overlay
+        modprobe br_netfilter
+        cat << EOF | sudo tee /etc/modules-load.d/k8s.conf
+        overlay
+        br_netfilter
+        EOF
+        cat << EOF | sudo tee /etc/sysctl.d/k8s.conf
+        net.bridge.bridge-nf-call-iptables  = 1
+        net.bridge.bridge-nf-call-ip6tables = 1
+        net.ipv4.ip_forward                 = 1
+        EOF
+        sysctl --system
+        lsmod | grep br_netfilter
+        lsmod | grep overlay
+      register: command_output
+    
+    - debug:
+        var: command_output.stdout_lines
+
+    - name: "Download Container Runtime (containerd.io {{ containerd_ver }}) for Kubernetes"
+      unarchive:
+        src: https://github.com/containerd/containerd/releases/download/v{{ containerd_ver }}/containerd-{{ containerd_ver }}-linux-amd64.tar.gz
+        dest: "{{ containerd_bin_path }}"
+        extra_opts: [--strip-components=1]
+        remote_src: yes
+
+    - name: Download containerd service file
+      get_url:
+        url: https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
+        dest: /etc/systemd/system/containerd.service
+
+    - name: Create configs for containerd
+      shell: containerd config default | sudo tee /etc/containerd/config.toml
+
+    - name: Ensure SystemdCgroup is set to true in containered config.toml
+      lineinfile:
+        path: /etc/containerd/config.toml
+        regexp: 'SystemdCgroup = false'
+        line: '            SystemdCgroup = true'
+        backrefs: yes
+
+    - name: "Starting containerd runtime (containerd.io {{ containerd_ver }})"
+      systemd:
+        name: containerd
+        state: started
+        daemon_reload: yes
+
+    - name: Download runc
+      get_url:
+        url: https://github.com/opencontainers/runc/releases/download/v1.1.7/runc.amd64
+        dest: "{{ tmp_dir }}"
+
+    - name: Install runc for containers
+      become: true
+      command: install -m 755 "{{ tmp_dir }}"/runc.amd64 /usr/local/sbin/runc
+
+    - name: Remove swapfile from /etc/fstab
+      mount:
+        name: "{{ item }}"
+        fstype: swap
+        state: absent
+      with_items:
+        - swap
+        - none
+
+    - name: Disable swap
+      command: swapoff -a
+
+    - name: Add an apt signing key for Kubernetes
+      apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        keyring: /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+        state: present
+
+    - name: Adding apt repository for Kubernetes
+      apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main"
+        filename: kubernetes
+        state: present
+
+    - name: Install Kubernetes binaries
+      apt: 
+        name: "{{ packages }}"
+        state: present
+        update_cache: yes
+      vars:
+        packages:
+          - kubelet={{ k8s_ver }}
+          - kubeadm={{ k8s_ver }}
+          - kubectl={{ k8s_ver }}
+
+    # - name: Configure node ip
+    #   lineinfile:
+    #     path: /etc/default/kubelet
+    #     line: KUBELET_EXTRA_ARGS=--node-ip={{ node_ip }}
+    #     create: yes
+
+    - name: Join the node to cluster
+      command: kubeadm join 10.242.7.73:6443 --node-name "{{ node_name }}" --token a47t0f.63gya6b5v0ctse4z --discovery-token-ca-cert-hash sha256:46f05be83693e4e6e29b599e75db8fafc20c374dc1901a74f807c0e9358cf05a
+      register: join_cluster_output
+    
+    - debug:
+        var: join_cluster_output.stdout_lines
+
+    - name: Remove tmp directory
+      file:
+        state: absent
+        path: "{{ item }}"
+      loop:
+        - "{{ tmp_dir }}"

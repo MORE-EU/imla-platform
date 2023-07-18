@@ -1,0 +1,42 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forecasting-deply
+  namespace: more-demo
+  labels:
+    app: forecasting
+spec:
+  replicas: 1
+  selector: 
+    matchLabels:
+      app: forecasting
+  template:
+    metadata:
+      labels:
+        app: forecasting
+    spec:
+      containers:
+      - name: forecasting-service
+        image: dhavalsalwala/forecasting-service:latest
+        volumeMounts:
+          - mountPath: /configs
+            name: sail-data
+        resources: {}
+        env:
+        - name: MODELARDB_HOSTNAME
+          value: "modelardbd-service"
+        - name: MODELARDB_PORT
+          value: "99"
+        - name: MODELARDB_INTERFACE
+          value: "arrow"
+        - name: LOGGING_LEVEL
+          value: "DEBUG"
+      initContainers:
+      - name: init-modelardbd-service
+        image: dhavalsalwala/forecasting-service:latest
+        command: ["while [[ $(kubectl get pods -l app=modelardbd -o 'jsonpath={..status.conditions[?(@.type=='Ready')].status}') != 'True' ]]; do echo 'waiting for pod' && sleep 1; done"]
+      volumes:
+        - name: forecasting-data
+          persistentVolumeClaim:
+            claimName: forecasting-pvc

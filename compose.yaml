@@ -1,0 +1,23 @@
+---
+version: "3.8"
+services:
+  forecasting-service:
+    image: forecasting-service:latest
+    hostname: forecasting-service
+    container_name: forecasting-service
+    build:
+      context: "."
+    shm_size: "10.24gb"
+    environment:
+      MODELARDB_HOSTNAME: modelardbd
+      MODELARDB_PORT: 9999
+      MODELARDB_INTERFACE: arrow
+      LOGGING_LEVEL: DEBUG
+    volumes:
+      - /home/dhaval/dev/sail-docker/configs/run_configs_regression.yaml:/configs/run_configs.yaml
+      - /home/dhaval/dev/ray_results:/home/dhaval/dev/ray_results
+
+networks:
+  default:
+    name: more-network
+    external: true
