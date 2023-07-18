@@ -1,7 +1,10 @@
 import os
+
 os.environ["TUNE_DISABLE_SIGINT_HANDLER"] = "1"
 import signal
+import tempfile
 import sys
+from argparse import ArgumentParser
 
 import config
 from more_utils.messaging import RabbitMQFactory
@@ -26,11 +29,13 @@ broker_configs = {
     "broker_password": config.RABBITMQ_PASS,
 }
 
+
 def signal_handler(sig, frame):
-    print('Exiting Forecasting service...')
+    print("Exiting Forecasting service...")
     sys.exit(0)
 
-def run_service():
+
+def run_service(data_dir):
     try:
         modelardb_conn = ModelarDB.connect(**modelardb_configs)
         message_broker = RabbitMQFactory.create_context(args=broker_configs)
@@ -38,7 +43,7 @@ def run_service():
             modelardb_conn=modelardb_conn,
             message_broker=message_broker,
             logging_level=config.LOGGING_LEVEL,
-            data_dir=config.DATA_DIR,
+            data_dir=data_dir,
         )
         service.run()
     except KeyboardInterrupt:
@@ -47,4 +52,16 @@ def run_service():
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
-    run_service()
+    parser = ArgumentParser()
+    parser.add_argument(
+        "--data_dir",
+        help="Path to data directory",
+        type=str,
+        required=False,
+    )
+    args = parser.parse_args()
+    data_dir = args.data_dir
+    if not data_dir:
+        data_dir = tempfile.mkdtemp()
+    os.makedirs(data_dir, exist_ok=True)
+    run_service(data_dir)

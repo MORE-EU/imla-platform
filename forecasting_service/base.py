@@ -38,13 +38,9 @@ class BaseService:
         self.logger.info("Connected to ModelarDB.")
 
     def create_experiment_directory(self, data_dir):
-        while True:
-            exp_name = "ForecastingExperiment" + "_" + time.strftime("%d-%m-%Y_%H:%M:%S")
-            exp_dir = os.path.join(data_dir, exp_name)
-            if os.path.exists(exp_dir) and os.path.isdir(exp_dir):
-                continue
-            os.makedirs(exp_dir, exist_ok=False)
-            break
+        exp_name = "ForecastingTask" + "_" + time.strftime("%d-%m-%Y_%H:%M:%S")
+        exp_dir = os.path.join(data_dir, exp_name)
+        os.makedirs(exp_dir, exist_ok=True)
         return exp_dir
 
     def load_or_create_model(self, configs):
@@ -137,12 +133,12 @@ class BaseService:
         try:
             mh = MessageHandler()
             
-            # Receive one job at a time from Message Broker
+            # Receive one task at a time from Message Broker
             self.consumer.receive(
                 mh.handler, max_messages=1, timeout=None
             )
 
-            # Send acknowlegment for the incoming job
+            # Send acknowlegment for the incoming task
             self.send_job_ack()
 
             # get message from handler
