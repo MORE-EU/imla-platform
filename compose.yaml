@@ -2,7 +2,7 @@
 version: "3.8"
 services:
   forecasting-service:
-    image: forecasting-service:latest
+    image: dhavalsalwala/forecasting-service:latest
     hostname: forecasting-service
     container_name: forecasting-service
     build:
