@@ -2,7 +2,7 @@
 - name: Ansible playbook to prepare node as K8s worker
   hosts: localhost
   become: yes
-  gather_facts: false
+  gather_facts: true
   vars:
     node_name: more-worker
     k8s_ver: 1.27.*
@@ -145,9 +145,15 @@
     #     line: KUBELET_EXTRA_ARGS=--node-ip={{ node_ip }}
     #     create: yes
 
+    - name: Append node name in the join command
+      replace:
+        path: "{{tmp_dir}}/join_command.sh"
+        regexp: '--token'
+        replace: '--node-name {{ ansible_nodename }} --token '
+        backup: yes
+
     - name: Join the node to cluster
-      command: kubeadm join 10.242.7.73:6443 --node-name "{{ node_name }}" --token a47t0f.63gya6b5v0ctse4z --discovery-token-ca-cert-hash sha256:46f05be83693e4e6e29b599e75db8fafc20c374dc1901a74f807c0e9358cf05a
-      register: join_cluster_output
+      command: sh {{tmp_dir}}/join-command.sh
     
     - debug:
         var: join_cluster_output.stdout_lines

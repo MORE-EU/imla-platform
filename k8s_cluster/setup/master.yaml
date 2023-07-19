@@ -2,7 +2,7 @@
 - name: Ansible playbook to prepare node as K8s master
   hosts: localhost
   become: yes
-  gather_facts: false
+  gather_facts: true
   vars:
     node_name: more-master
     k8s_ver: 1.27.*
@@ -177,6 +177,14 @@
     - name: Remove NoSchedule taint role in master
       become_user: "{{ lookup('env','USER') }}"
       command: kubectl taint nodes --all node-role.kubernetes.io/master:NoSchedule-
+
+    - name: Generate join command
+      become_user: "{{ lookup('env','USER') }}"
+      command: kubeadm token create --print-join-command
+      register: join_command
+
+    - name: Copy the join command to server location
+      copy: content="{{ join_command.stdout_lines[0] + '\n' }}" dest={{tmp_dir}}/join_command.sh mode=0777
 
     - name: Remove tmp directory
       file:
