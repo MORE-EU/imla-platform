@@ -92,7 +92,7 @@
     - name: "Starting containerd runtime (containerd.io {{ containerd_ver }})"
       systemd:
         name: containerd
-        state: started
+        state: restarted
         daemon_reload: yes
 
     - name: Download runc
@@ -176,7 +176,7 @@
 
     - name: Remove NoSchedule taint role in master
       become_user: "{{ lookup('env','USER') }}"
-      command: kubectl taint nodes --all node-role.kubernetes.io/master:NoSchedule-
+      command: kubectl taint nodes --all node-role.kubernetes.io/control-plane-
 
     - name: Generate join command
       become_user: "{{ lookup('env','USER') }}"
