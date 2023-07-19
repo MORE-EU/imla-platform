@@ -160,7 +160,7 @@
         src: /etc/kubernetes/admin.conf
         dest: "{{ lookup('env','HOME') }}//.kube/config"
         owner: "{{ lookup('env','USER') }}"
-        # group: "{{ lookup('env','USER') }}"
+        group: "{{ lookup('env','USER') }}"
         # mode: go-r
 
     - name: "Install calico pod network as user: {{ lookup('env','USER') }}"
@@ -174,9 +174,9 @@
     - debug:
         var: pod_network_output.stdout_lines
 
-    - name: Remove taint role in master
+    - name: Remove NoSchedule taint role in master
       become_user: "{{ lookup('env','USER') }}"
-      command: kubectl taint nodes --all node-role.kubernetes.io/control-plane-
+      command: kubectl taint nodes --all node-role.kubernetes.io/master:NoSchedule-
 
     - name: Remove tmp directory
       file:
