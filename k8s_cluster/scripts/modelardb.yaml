@@ -1,13 +1,46 @@
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: modelardbd
+#   namespace: more-demo
+#   labels:
+#     app: modelardbd
+# spec:
+#   replicas: 1
+#   selector: 
+#     matchLabels:
+#       app: modelardbd
+#   template:
+#     metadata:
+#       labels:
+#         app: modelardbd
+#     spec:
+#       containers:
+#       - name: modelardbd-rs-container
+#         image: dhavalsalwala/modelardb-rs:latest
+#         volumeMounts:
+#           - mountPath: /data
+#             name: modelardbd-data
+#         resources: {}
+#         ports:
+#         - containerPort: 9999
+#       volumes:
+#         - name: modelardbd-data
+#           persistentVolumeClaim:
+#             claimName: modelardbd-pvc
+
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: modelardbd-deply
+  name: modelardbd
   namespace: more-demo
   labels:
     app: modelardbd
 spec:
-  replicas: 1
+  replicas: 2
+  serviceName: modelardbd
   selector: 
     matchLabels:
       app: modelardbd
@@ -17,18 +50,29 @@ spec:
         app: modelardbd
     spec:
       containers:
-      - name: modelardbd-container
+      - name: modelardbd-rs-container
         image: dhavalsalwala/modelardb-rs:latest
         volumeMounts:
           - mountPath: /data
-            name: modelardbd-data
+            name: modelardbd-pvc
         resources: {}
         ports:
         - containerPort: 9999
-      volumes:
-        - name: modelardbd-data
-          persistentVolumeClaim:
-            claimName: modelardbd-pvc
+      # volumes:
+      #   - name: modelardbd-data
+      #     persistentVolumeClaim:
+      #       claimName: modelardbd-pvc
+  volumeClaimTemplates:
+  - metadata:
+      name: modelardbd-pvc
+    spec:
+      accessModes:
+      - ReadWriteMany
+      storageClassName: modelardbd-storage
+      resources:
+        requests:
+          storage: 5Gi
+      
 
 ---
 apiVersion: v1

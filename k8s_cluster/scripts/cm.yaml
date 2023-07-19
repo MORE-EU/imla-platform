@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: more-configmap
+  namespace: more-demo
+data: 
+    RABBITMQ_USER: admin
+    RABBITMQ_PASS: admin
+    RABBITMQ_PORT: "5672"
+    RABBITMQ_HOST: messaging-service
+    RABBITMQ_CONSUMER_QUEUE: forecasting-job
+    RABBITMQ_PRODUCER_QUEUE: forecasting-response
+    MODELARDB_HOSTNAME: modelardbd-service
+    MODELARDB_PORT: "9999"
+    MODELARDB_INTERFACE: arrow
+    LOGGING_LEVEL: INFO
+    DATA_DIR: /data

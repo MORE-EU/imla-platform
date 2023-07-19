@@ -1,16 +1,16 @@
----
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: modelardbd-storage
-provisioner: kubernetes.io/no-provisioner
-volumeBindingMode: WaitForFirstConsumer
+# ---
+# apiVersion: storage.k8s.io/v1
+# kind: StorageClass
+# metadata:
+#   name: modelardbd-storage
+# provisioner: kubernetes.io/no-provisioner
+# volumeBindingMode: WaitForFirstConsumer
 
 ---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: modelardbd-pv
+  name: modelardbd-pv-2
 spec:
   capacity:
     storage: 5Gi
@@ -25,23 +25,21 @@ spec:
     required:
       nodeSelectorTerms:
       - matchExpressions:
-        - key:  kubernetes.io/hostname
-          operator: In
-          values:
-          - more-master
+        - key:  node-role.kubernetes.io/control-plane
+          operator: Exists 
 
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: forecasting-pv
-spec:
-  capacity:
-    storage: 5Gi
-  volumeMode: Filesystem
-  accessModes:
-  - ReadWriteMany
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: forecasting-storage
-  hostPath:
-    path: /home/dhaval/dev/data
+# ---
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: forecasting-pv
+# spec:
+#   capacity:
+#     storage: 5Gi
+#   volumeMode: Filesystem
+#   accessModes:
+#   - ReadWriteMany
+#   persistentVolumeReclaimPolicy: Retain
+#   storageClassName: forecasting-storage
+#   hostPath:
+#     path: /home/dhaval/dev/data

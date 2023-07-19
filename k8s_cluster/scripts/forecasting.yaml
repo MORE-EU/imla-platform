@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: forecasting-deply
+  name: forecasting
   namespace: more-demo
   labels:
     app: forecasting
@@ -16,27 +16,89 @@ spec:
       labels:
         app: forecasting
     spec:
+      nodeSelector:
+        node-role.kubernetes.io/worker: ""
       containers:
-      - name: forecasting-service
+      - name: forecasting-service-container
         image: dhavalsalwala/forecasting-service:latest
-        volumeMounts:
-          - mountPath: /configs
-            name: sail-data
+        # imagePullPolicy: Always
+        # command: ["python", "forecasting_service/run.py"]
+        args: ["--data_dir", "/data"]
         resources: {}
+        volumeMounts:
+          - name: forecasting-data
+            mountPath: /data
+            subPathExpr: $(POD_NAME)
+          - name: shm
+            mountPath: /dev/shm
+            
         env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
         - name: MODELARDB_HOSTNAME
-          value: "modelardbd-service"
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: MODELARDB_HOSTNAME
         - name: MODELARDB_PORT
-          value: "99"
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: MODELARDB_PORT
         - name: MODELARDB_INTERFACE
-          value: "arrow"
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: MODELARDB_INTERFACE
         - name: LOGGING_LEVEL
-          value: "DEBUG"
-      initContainers:
-      - name: init-modelardbd-service
-        image: dhavalsalwala/forecasting-service:latest
-        command: ["while [[ $(kubectl get pods -l app=modelardbd -o 'jsonpath={..status.conditions[?(@.type=='Ready')].status}') != 'True' ]]; do echo 'waiting for pod' && sleep 1; done"]
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: LOGGING_LEVEL
+        - name: RABBITMQ_USER
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: RABBITMQ_USER
+        - name: RABBITMQ_PASS
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: RABBITMQ_PASS
+        - name: RABBITMQ_HOST
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: RABBITMQ_HOST
+        - name: RABBITMQ_PORT
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: RABBITMQ_PORT
+        - name: RABBITMQ_CONSUMER_QUEUE
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: RABBITMQ_CONSUMER_QUEUE
+        - name: RABBITMQ_PRODUCER_QUEUE
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: RABBITMQ_PRODUCER_QUEUE
+
+      # initContainers:
+      # - name: init-modelardbd-service
+      #   image: dhavalsalwala/forecasting-service:latest
+      #   command: ["while [[ $(kubectl get pods -l app=modelardbd -o 'jsonpath={..status.conditions[?(@.type=='Ready')].status}') != 'True' ]]; do echo 'waiting for pod' && sleep 1; done"]
+      
       volumes:
-        - name: forecasting-data
-          persistentVolumeClaim:
-            claimName: forecasting-pvc
+      - name: forecasting-data
+        persistentVolumeClaim:
+          claimName: forecasting-pvc
+      - name: shm
+        emptyDir:
+          sizeLimit: "10.84G"
+          medium: Memory
