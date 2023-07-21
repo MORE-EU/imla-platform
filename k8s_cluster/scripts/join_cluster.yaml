@@ -2,11 +2,11 @@ apiVersion: kubeadm.k8s.io/v1beta3
 kind: JoinConfiguration
 discovery:
   bootstrapToken:
-    token: d7u059.vte5dsux932wl7f4
+    token: ekk83h.7otpjux9dqjvybwn
     apiServerEndpoint: "10.242.7.73:6443"
-    caCertHashes: ["sha256:24df2e2f8b577c337eaece255d2b2453ac340deea634e0901b475910470120d3"]
+    caCertHashes: ["sha256:652f6361a15f63bb579db9fb23b239fd8a33d7dd150b00e2ed143a16978cf3a7"]
 nodeRegistration:
   name: more-worker
   kubeletExtraArgs:
     cloud-provider: external
-    node-labels: "node-role.kubernetes.io/worker="
+    node-labels: "node-type=worker"
