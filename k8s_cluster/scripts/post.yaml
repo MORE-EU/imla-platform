@@ -1,5 +1,5 @@
 ---
-- name: Ansible playbook to prepare node as K8s master
+- name: Ansible playbook to prepare node after the cluster is initiated and workers have joined.
   hosts: localhost
   become: yes
   gather_facts: false
