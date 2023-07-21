@@ -1,0 +1,52 @@
+---
+- name: Ansible playbook to prepare node as K8s master
+  hosts: localhost
+  become: yes
+  gather_facts: false
+  vars:
+    calico_ver: 3.26.1
+
+  tasks:
+
+    - name: Assign read permission to the kube config file
+      file:
+        path: /etc/kubernetes/admin.conf
+        mode: o+r
+
+    - name: "Copy kube conf file to the working directory: {{ lookup('env','HOME') }}/.kube"
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: "{{ lookup('env','HOME') }}//.kube/config"
+        owner: "{{ lookup('env','USER') }}"
+        group: "{{ lookup('env','USER') }}"
+
+    - name: "Install calico pod network as user: {{ lookup('env','USER') }}"
+      command: "{{ item }}" 
+      become_user: "{{ lookup('env','USER') }}"
+      loop:
+        - kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v{{ calico_ver }}/manifests/tigera-operator.yaml
+        - kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v{{ calico_ver }}/manifests/custom-resources.yaml
+      register: pod_network_output
+    
+    - debug:
+        var: pod_network_output.stdout_lines
+
+    - name: Remove NoSchedule taint from master nodes
+      become_user: "{{ lookup('env','USER') }}"
+      command: kubectl taint nodes {{ item }} node-role.kubernetes.io/control-plane:NoSchedule-
+      loop:
+        - more-master
+
+    - name: Add worker role to all worker nodes.
+      become_user: "{{ lookup('env','USER') }}"
+      command: kubectl label --overwrite nodes {{ item }} node-role.kubernetes.io/worker=
+      loop:
+        - worker1
+
+    - name: Set current k8s namespace
+      become_user: "{{ lookup('env','USER') }}"
+      command: kubectl config set-context --current --namespace={{ item }}
+      loop:
+        - more-demo
+
+        

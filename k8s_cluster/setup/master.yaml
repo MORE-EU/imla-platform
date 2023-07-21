@@ -176,7 +176,7 @@
 
     - name: Remove NoSchedule taint role in master
       become_user: "{{ lookup('env','USER') }}"
-      command: node.cloudprovider.kubernetes.io/uninitialized=true:NoSchedule-
+      command: kubectl taint nodes --all node-role.kubernetes.io/control-plane:NoSchedule-
 
     - name: Generate join command
       become_user: "{{ lookup('env','USER') }}"

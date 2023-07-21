@@ -8,5 +8,4 @@ discovery:
 nodeRegistration:
   name: more-worker
   kubeletExtraArgs:
-    cloud-provider: external
     node-labels: "node-type=worker"
