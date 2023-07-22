@@ -35,7 +35,7 @@
       become_user: "{{ lookup('env','USER') }}"
       command: kubectl taint nodes {{ item }} node-role.kubernetes.io/control-plane:NoSchedule-
       loop:
-        - more-master
+        - master
 
     - name: Add worker role to all worker nodes.
       become_user: "{{ lookup('env','USER') }}"
