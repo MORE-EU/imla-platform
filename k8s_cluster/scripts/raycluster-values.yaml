@@ -1,0 +1,28 @@
+image:
+  tag: 2.5.1
+
+head:
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+  resources:
+    limits:
+      cpu: "14"
+      # To avoid out-of-memory issues, never allocate less than 2G memory for the Ray head.
+      memory: "10G"
+    requests:
+      cpu: "14"
+      memory: "10G"
+
+worker:
+  nodeSelector:
+    node-role.kubernetes.io/worker: ""
+  resources:
+    limits:
+      cpu: "14"
+      memory: "10G"
+    requests:
+      cpu: "14"
+      memory: "10G"
+  replicas: 2
+  minReplicas: 2
+  maxReplicas: 2

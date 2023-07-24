@@ -1,6 +1,6 @@
 ---
 - name: Ansible playbook to prepare node as K8s worker
-  hosts: more_workers
+  hosts: more-workers
   become: yes
   gather_facts: true
   vars:
@@ -160,7 +160,10 @@
           - kubectl={{ k8s_ver }}
 
     - name: Copy the join command from master to worker node
-      copy: content={tmp_dir}}/join_command.sh dest={{tmp_dir}}/join_command.sh mode=0777
+      copy: 
+        src: "{{tmp_dir}}/join_command.sh"
+        dest: "{{tmp_dir}}/join_command.sh"
+        mode: 0777
 
     - name: Append host name in the join command
       replace:
@@ -170,7 +173,8 @@
         backup: yes
 
     - name: Join the node to cluster
-      command: sh {{tmp_dir}}/join-command.sh
+      command: sh {{tmp_dir}}/join_command.sh
+      register: join_cluster_output
     
     - debug:
         var: join_cluster_output.stdout_lines
