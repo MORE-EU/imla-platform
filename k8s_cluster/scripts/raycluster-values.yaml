@@ -1,6 +1,6 @@
 image:
-  tag: 2.5.1
-
+  tag: 2.5.1-py38
+fullnameOverride: "ray-cluster"
 head:
   nodeSelector:
     node-role.kubernetes.io/control-plane: ""
@@ -18,10 +18,10 @@ worker:
     node-role.kubernetes.io/worker: ""
   resources:
     limits:
-      cpu: "14"
+      cpu: "7"
       memory: "10G"
     requests:
-      cpu: "14"
+      cpu: "7"
       memory: "10G"
   replicas: 2
   minReplicas: 2
