@@ -16,4 +16,10 @@ def param_class_parser(param: dict):
                 else:
                     param_map[sub_param["name"]] = sub_param["value"]
         return param_class(**param_map) if inspect.isclass(param_class) else param_class
+    elif "module" in param:
+        loaded_modules = []
+        for module in param["module"]:
+            loaded_modules.append(importlib.import_module(module))
+        return loaded_modules
+    
     return param["value"]

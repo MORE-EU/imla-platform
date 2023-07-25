@@ -75,8 +75,24 @@ sail:
       value: false
     - name: keep_best_configurations
       value: 2
-    - name: cluster_address
-      value: null
+    # - name: cluster_address
+    #   value: "ray://localhost:10001"
+    # - name: namespace
+    #   value: sail-tune
+    # - name: runtime_env
+    #   params:
+    #     - name: py_modules 
+    #       module: 
+    #         - sail     
+    #     - name: pip
+    #       value:
+    #         - "dill"
+    #         - "ipython"
+    #         - "logzero"
+    #         - "numpy>=1.23"
+    #         - "river==0.14.*"
+    #         - "tune_sklearn"
+    #         - "scikit-learn>=1.2"
 
   incremental_training: true
 

@@ -46,8 +46,15 @@ class ForecastingService(BaseService):
         sail_auto_params["search_method"] = configs["search_method"]
 
         search_method_params = {}
-        for sarch_param in configs["search_method_params"]:
-            search_method_params[sarch_param["name"]] = param_class_parser(sarch_param)
+        for search_param in configs["search_method_params"]:
+            if "params" in search_param:
+                param_map = {}
+                for param in search_param["params"]:
+                    param_map[param["name"]] = param_class_parser(param)
+                search_method_params[search_param["name"]] = param_map
+            else:
+                search_method_params[search_param["name"]] = param_class_parser(search_param)
+
         search_method_params["storage_path"] = os.path.join(
             self.exp_dir, "ray_results"
         )
