@@ -53,11 +53,10 @@ class ForecastingService(BaseService):
                     param_map[param["name"]] = param_class_parser(param)
                 search_method_params[search_param["name"]] = param_map
             else:
-                search_method_params[search_param["name"]] = param_class_parser(search_param)
+                search_method_params[search_param["name"]] = param_class_parser(
+                    search_param
+                )
 
-        search_method_params["storage_path"] = os.path.join(
-            self.exp_dir, "ray_results"
-        )
         sail_auto_params["search_method_params"] = search_method_params
 
         sail_auto_params["search_data_size"] = configs["search_data_size"]
@@ -70,11 +69,19 @@ class ForecastingService(BaseService):
         return SAILAutoPipeline(**sail_auto_params)
 
     def process_ts_batch(self, ts_batch, model, target, timestamp_col, fit_params):
-        if not super(ForecastingService, self).process_ts_batch(ts_batch, timestamp_col):
+        if not super(ForecastingService, self).process_ts_batch(
+            ts_batch, timestamp_col
+        ):
             return False
 
+        time_stamps = ts_batch[timestamp_col]
         X = ts_batch.drop([target, timestamp_col], axis=1)
         y = ts_batch[target]
+
+        if model.best_pipeline:
+            preds = model.predict(X)
+            for time, pred in zip(time_stamps, preds):
+                self.predictions[str(time)] = pred
 
         model.train(X, y, **fit_params)
 

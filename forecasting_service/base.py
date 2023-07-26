@@ -16,7 +16,7 @@ class MessageHandler:
 
     def handler(self, message):
         self.message = json.loads(message)
-    
+
     def get_message(self):
         return self.message
 
@@ -24,7 +24,9 @@ class MessageHandler:
 class BaseService:
     def __init__(self, name, modelardb_conn, message_broker, logging_level, data_dir):
         self.logger = configure_logger(
-            package_name="Forecasting-service", logger_name=name, logging_level=logging_level
+            package_name="Forecasting-service",
+            logger_name=name,
+            logging_level=logging_level,
         )
         self.name = name
         self.modelardb_conn = modelardb_conn
@@ -40,7 +42,8 @@ class BaseService:
     def create_experiment_directory(self, data_dir):
         exp_name = "ForecastingTask" + "_" + time.strftime("%d-%m-%Y_%H:%M:%S")
         exp_dir = os.path.join(data_dir, exp_name)
-        os.makedirs(exp_dir, exist_ok=True)
+        os.umask(0)
+        os.makedirs(exp_dir, mode=0o777, exist_ok=True)
         return exp_dir
 
     def load_or_create_model(self, configs):
@@ -98,9 +101,11 @@ class BaseService:
             json.dumps({"STATUS": "ACCEPTED", "timestamp": datetime.now()}, default=str)
         )
 
-    def send_response(self, json_message):
-        ...
-    
+    def publish_predictions(self):
+        response_msg = {"predictions": self.predictions}
+        with open(os.path.join(self.exp_dir, "response.json"), "w") as f:
+            json.dump(response_msg, f, indent=2)
+
     def save_model_instance(self, model):
         model.save_model(os.path.join(self.exp_dir, "model"))
 
@@ -132,11 +137,9 @@ class BaseService:
         self.logger.info("Listening for incoming time-series task...")
         try:
             mh = MessageHandler()
-            
+
             # Receive one task at a time from Message Broker
-            self.consumer.receive(
-                mh.handler, max_messages=1, timeout=None
-            )
+            self.consumer.receive(mh.handler, max_messages=1, timeout=None)
 
             # Send acknowlegment for the incoming task
             self.send_job_ack()
@@ -152,6 +155,7 @@ class BaseService:
             query_session = self.get_query_session(run_configs["time_series"])
             target, timestamp_col, fit_params = self.get_training_params(run_configs)
 
+            self.predictions = {}
             for ts_batch in query_session:
                 self.process_ts_batch(
                     ts_batch, model, target, timestamp_col, fit_params
@@ -161,14 +165,18 @@ class BaseService:
             # save trained model instance
             self.save_model_instance(model)
 
-            self.logger.info(f"Task finished successfully. Model saved to {self.exp_dir}/model \n")
+            # publish predictions
+            self.publish_predictions()
+
+            self.logger.info(
+                f"Task finished successfully. Model saved to {self.exp_dir}/model \n"
+            )
 
         except Exception as e:
             self.logger.error(f"Error processing new request:")
             self.logger.exception(e)
         finally:
             ray.shutdown()
-            
 
     def run_forever(self, method, **kwargs):
         while True:
