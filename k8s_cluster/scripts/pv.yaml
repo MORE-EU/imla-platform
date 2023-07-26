@@ -29,6 +29,14 @@ spec:
           operator: Exists 
 
 ---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-client
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+
+---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -36,10 +44,11 @@ metadata:
 spec:
   capacity:
     storage: 5Gi
-  volumeMode: Filesystem
   accessModes:
-  - ReadWriteMany
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: forecasting-storage
-  hostPath:
-    path: /home/dhaval/dev/data
+    - ReadWriteMany
+  storageClassName: nfs-client
+  nfs:
+    server: nfs-share.sl.cloud9.ibm.com
+    path: /mnt/nfs
+  mountOptions:
+    - nfsvers=4.2

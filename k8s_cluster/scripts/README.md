@@ -11,7 +11,13 @@ helm install -f kuberay-values.yaml kuberay-operator kuberay/kuberay-operator --
 ### Install Raycluster
 
 ```shell
-helm install -f raycluster-values.yaml raycluster kuberay/ray-cluster --version 0.5.0
+helm install -f raycluster-values.yaml more-ray-cluster kuberay/ray-cluster --version 0.5.0
+```
+
+### Install NFS local provisioner
+
+```shell
+helm install -f nfs-values.yaml nfs-provisioning nfs-subdir-external-provisioner/nfs-subdir-external-provisioner
 ```
 
 ### Optional: In order to see stats, install metrics-server.

@@ -19,9 +19,9 @@ spec:
       nodeSelector:
         node-role.kubernetes.io/worker: ""
       containers:
-      - name: forecasting-service-container
+      - name: forecasting-container
         image: dhavalsalwala/forecasting-service:latest
-        # imagePullPolicy: Always
+        imagePullPolicy: Always
         # command: ["python", "forecasting_service/run.py"]
         args: ["--data_dir", "/data"]
         resources: {}
@@ -29,8 +29,8 @@ spec:
           - name: forecasting-data
             mountPath: /data
             subPathExpr: $(POD_NAME)
-          - name: shm
-            mountPath: /dev/shm
+          # - name: shm
+          #   mountPath: /dev/shm
             
         env:
         - name: POD_NAME
@@ -97,8 +97,8 @@ spec:
       volumes:
       - name: forecasting-data
         persistentVolumeClaim:
-          claimName: forecasting-pvc
-      - name: shm
-        emptyDir:
-          sizeLimit: "10.84G"
-          medium: Memory
+          claimName: forecasting-nfs
+      # - name: shm
+      #   emptyDir:
+      #     sizeLimit: "10.84G"
+      #     medium: Memory

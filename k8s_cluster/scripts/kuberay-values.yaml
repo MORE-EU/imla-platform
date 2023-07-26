@@ -1,2 +1,4 @@
+# https://github.com/ray-project/kuberay/tree/master/helm-chart/kuberay-operator
+
 nodeSelector:
   node-role.kubernetes.io/control-plane: ""

@@ -65,6 +65,7 @@
         - curl
         - gnupg-agent
         - software-properties-common
+        - nfs-common
 
     - name: Load Kernel modules & settings
       shell: |

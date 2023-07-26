@@ -1,0 +1,8 @@
+# https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner/tree/master/charts/nfs-subdir-external-provisioner
+
+fullnameOverride: nfs-client
+
+nfs:
+  server: nfs-share.sl.cloud9.ibm.com
+  path: /mnt/nfs
+
