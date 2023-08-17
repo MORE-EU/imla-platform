@@ -1,7 +1,7 @@
 # https://github.com/ray-project/kuberay/tree/master/helm-chart/ray-cluster
 
 image:
-  tag: 2.5.1-py38
+  tag: 2.5.1-py310
 fullnameOverride: "ray-cluster"
 head:
   nodeSelector:
