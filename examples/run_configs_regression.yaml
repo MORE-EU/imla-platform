@@ -3,58 +3,68 @@ sail:
 
   model_path: null
 
-  estimators:
-    - name: linear_reg
-      class: sail.models.river.linear_model.LinearRegression
-      params:
-        - name: optimizer
-          class: river.optim.SGD
-          params:
-            - name: lr
-              value: 0.1
-        - name: intercept_init
-          value: 0.15
-    - name: random_forest
-      class: sail.models.river.forest.AdaptiveRandomForestRegressor
-      params:
-        - name: n_models
-          value: 10
+  refs:
+    - linear_reg: &linear_reg 
+        class: sail.models.river.linear_model.LinearRegression
+        params:
+          - name: optimizer
+            class: river.optim.SGD
+            params:
+              - name: lr
+                value: 0.1
+          - name: intercept_init
+            value: 0.15
+            
+    - random_forest: &random_forest
+        class: sail.models.river.forest.AdaptiveRandomForestRegressor
+        params:
+          - name: n_models
+            value: 20
 
-  steps:
-    - name: Imputer
+  steps: &steps
+    - type: tuple
+      name: Imputer
       class: sklearn.impute.SimpleImputer
       params:
         - name: missing_values
           class: numpy.nan
         - name: strategy
-          value: mean
-    - name: standard_scalar
+          value: mode
+    - type: tuple
+      name: standard_scalar
       class: sail.transfomers.river.preprocessing.StandardScaler
-    - name: regressor
+    - type: tuple
+      name: regressor
       value: passthrough
 
   sail_pipeline:
-    params:
+    - name: steps
+      ref:  *steps
     - name: scoring
       class: river.metrics.R2
     - name: verbosity
       value: 1
     
   parameter_grid:
-    - regressor:
-        - linear_reg
-      regressor__l2:
-        - 0.1
-        - 0.9
-      regressor__intercept_init:
-        - 0.2
-        - 0.5
-    - regressor:
-        - random_forest
-      regressor__n_models:
-        - 10
-        - 15
-        - 20
+    - - name: regressor
+        ref:  
+          - *linear_reg
+      - name: regressor__l2
+        value:
+          - 0.1
+          - 0.9
+      - name: regressor__intercept_init
+        value:
+          - 0.2
+          - 0.5
+    - - name: regressor
+        ref: 
+          - *random_forest
+      - name: regressor__n_models
+        value:
+          - 10
+          - 15
+          - 20
 
   search_method: SAILTuneGridSearchCV
   search_data_size: 200
@@ -75,24 +85,24 @@ sail:
       value: false
     - name: keep_best_configurations
       value: 2
-    # - name: cluster_address
-    #   value: "ray://localhost:10001"
-    # - name: namespace
-    #   value: sail-tune
-    # - name: runtime_env
-    #   params:
-    #     - name: py_modules 
-    #       module: 
-    #         - sail     
-    #     - name: pip
-    #       value:
-    #         - "dill"
-    #         - "ipython"
-    #         - "logzero"
-    #         - "numpy>=1.23"
-    #         - "river==0.14.*"
-    #         - "tune_sklearn"
-    #         - "scikit-learn>=1.2"
+    - name: cluster_address
+      value: "ray://ray-cluster-head-svc:10001"
+    - name: namespace
+      value: sail-tune
+    - name: runtime_env
+      params:
+        - name: py_modules 
+          module: 
+            - sail     
+        - name: pip
+          value:
+            - "dill"
+            - "ipython"
+            - "logzero"
+            - "numpy>=1.23"
+            - "river==0.14.*"
+            - "tune_sklearn"
+            - "scikit-learn>=1.2"
 
   incremental_training: true
 

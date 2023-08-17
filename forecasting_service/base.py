@@ -46,18 +46,6 @@ class BaseService:
         os.makedirs(exp_dir, mode=0o777, exist_ok=True)
         return exp_dir
 
-    def load_or_create_model(self, configs):
-        if configs["model_path"]:
-            model = SAILAutoPipeline.load_model(configs["model_path"])
-            self.logger.info(
-                f"SAILAutoPipeline loaded successfully from - [{configs['model_path']}]."
-            )
-        else:
-            model = self.create_model_instance(configs)
-            self.logger.info("SAILAutoPipeline created successfully.")
-
-        return model
-
     def get_query_session(self, configs):
         time_series = self._ts_factory.create_time_series(
             model_table=configs["model_table"],
@@ -101,8 +89,8 @@ class BaseService:
             json.dumps({"STATUS": "ACCEPTED", "timestamp": datetime.now()}, default=str)
         )
 
-    def publish_predictions(self):
-        response_msg = {"predictions": self.predictions}
+    def publish_predictions(self, predictions):
+        response_msg = {"predictions": predictions}
         with open(os.path.join(self.exp_dir, "response.json"), "w") as f:
             json.dump(response_msg, f, indent=2)
 
@@ -155,10 +143,12 @@ class BaseService:
             query_session = self.get_query_session(run_configs["time_series"])
             target, timestamp_col, fit_params = self.get_training_params(run_configs)
 
-            self.predictions = {}
+            predictions = {}
             for ts_batch in query_session:
-                self.process_ts_batch(
-                    ts_batch, model, target, timestamp_col, fit_params
+                predictions.update(
+                    self.process_ts_batch(
+                        model, ts_batch, target, timestamp_col, fit_params
+                    )
                 )
                 sleep(run_configs["time_series"]["data_ingestion_freq"])
 
@@ -166,7 +156,7 @@ class BaseService:
             self.save_model_instance(model)
 
             # publish predictions
-            self.publish_predictions()
+            self.publish_predictions(predictions)
 
             self.logger.info(
                 f"Task finished successfully. Model saved to {self.exp_dir}/model \n"
