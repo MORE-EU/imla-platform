@@ -29,9 +29,11 @@ def create_model_table(flight_client, table_name, schema, error_bound):
 
     # Execute the CREATE MODEL TABLE command.
     action = flight.Action("CommandStatementUpdate", str.encode(sql))
-    result = flight_client.do_action(action)
-    print(f"Table: {table_name} created Successfully.")
-
+    results = flight_client.do_action(action)
+    if results:
+        print(next(results))
+    else:
+        print(f"Table: {table_name} created Successfully.")
 
 def read_parquet_file_or_folder(path):
     # Read Apache Parquet file or folder.
@@ -48,7 +50,9 @@ def read_parquet_file_or_folder(path):
         # Ensure all fields are float32 as float64 are not supported.
         if field.type == pyarrow.float64():
             columns.append((safe_name, pyarrow.float32()))
-        elif field.name == "datatime":
+        elif field.type == pyarrow.int64():
+            columns.append((safe_name, pyarrow.float32()))
+        elif field.name in ["pickup_datetime","dropoff_datetime","datetime"]:
             columns.append((field.name, pyarrow.timestamp("ms")))
         else:
             columns.append((safe_name, field.type))
@@ -68,17 +72,20 @@ def do_put_arrow_table(flight_client, table_name, arrow_table):
 
     # Flush the data to disk.
     action = flight.Action("FlushMemory", b"")
-    result = flight_client.do_action(action)
-    print("Flushed compressed data buffers.")
+    results = flight_client.do_action(action)
+    if results:
+        print(next(results))
+    else:
+        print("Flushed compressed data buffers.")
 
 
 # Main Function.
 if __name__ == "__main__":
     if len(sys.argv) < 4:
-        print(f"usage: {sys.argv[0]} host table parquet_file_or_folder [error_bound]")
+        print(f"usage: {sys.argv[0]} host_address table parquet_file_or_folder [error_bound]")
         sys.exit(1)
 
-    flight_client = flight.FlightClient(f"grpc://{sys.argv[1]}:9999")
+    flight_client = flight.FlightClient(f"grpc://{sys.argv[1]}")
     table_name = sys.argv[2]
     arrow_table = read_parquet_file_or_folder(sys.argv[3])
     error_bound = sys.argv[4]
