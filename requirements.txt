@@ -1,5 +1,5 @@
 git+https://github.com/IBM/more-utils.git
-sail[river,ray]==0.6.6
+sail[river,ray]==0.7.2
 python-decouple
 pyyaml
 fsspec
