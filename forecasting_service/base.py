@@ -5,9 +5,10 @@ import time
 import ray
 import os
 from more_utils.time_series import TimeseriesFactory
-from more_utils.util.logging import configure_logger
+from more_utils.logging import configure_logger
 from ray.tune.utils.util import SafeFallbackEncoder
-from sail.models.auto_ml.auto_pipeline import SAILAutoPipeline
+
+LOGGER = configure_logger(logger_name="ForecastingService", package_name=None)
 
 
 class MessageHandler:
@@ -22,22 +23,19 @@ class MessageHandler:
 
 
 class BaseService:
-    def __init__(self, name, modelardb_conn, message_broker, logging_level, data_dir):
-        self.logger = configure_logger(
-            package_name="Forecasting-service",
-            logger_name=name,
-            logging_level=logging_level,
-        )
+    def __init__(self, name, modelardb_conn, message_broker, data_dir):
         self.name = name
         self.modelardb_conn = modelardb_conn
         self.message_broker = message_broker
         self.data_dir = data_dir
+
         self.client = message_broker.client()
-        self.logger.info("Connected to Message Broker.")
         self.consumer = self.client.get_consumer()
         self.publisher = self.client.get_publisher()
+        LOGGER.info("Connected to Message Broker.")
+
         self._ts_factory = TimeseriesFactory(source_db_conn=modelardb_conn)
-        self.logger.info("Connected to ModelarDB.")
+        LOGGER.info("Connected to ModelarDB.")
 
     def create_experiment_directory(self, data_dir):
         exp_name = "ForecastingTask" + "_" + time.strftime("%d-%m-%Y_%H:%M:%S")
@@ -58,7 +56,7 @@ class BaseService:
         target = configs["target"]
         features = list(set(self.columns) - set([target]))
         query_session = time_series.fetch_next(batch_size=configs["data_batch_size"])
-        self.logger.info(
+        LOGGER.info(
             f"Query session created. Time-series found with features: {features} and target: {target}"
         )
 
@@ -79,7 +77,7 @@ class BaseService:
         return target, timestamp_col, fit_params
 
     def log_config(self, config):
-        self.logger.info(
+        LOGGER.info(
             "Time-series configs received:\n"
             + json.dumps(config, indent=2, cls=SafeFallbackEncoder)
         )
@@ -99,12 +97,12 @@ class BaseService:
 
     def ts_batch_validation(self, ts_batch, columns):
         if ts_batch.shape[0] <= 0:
-            self.logger.error(
+            LOGGER.error(
                 f"Empty Time-series batch received. Ignoring bad time-series batch."
             )
             return False
         elif list(ts_batch.columns) != columns:
-            self.logger.error(
+            LOGGER.error(
                 f"Missing features in a current batch: {list(set(columns).intersection(set(ts_batch.columns)))}. Ignoring bad time-series batch."
             )
             return False
@@ -112,17 +110,17 @@ class BaseService:
         return True
 
     def process_ts_batch(self, ts_batch, timestamp_col):
-        self.logger.info(f"Processing new time-series batch... ")
+        LOGGER.info(f"Processing new time-series batch... ")
         if not self.ts_batch_validation(ts_batch, self.columns):
             return False
 
         max = ts_batch[timestamp_col].max()
         min = ts_batch[timestamp_col].min()
-        self.logger.info(f"Batch Received: From {min} to {max}")
+        LOGGER.info(f"Batch Received: From {min} to {max}")
         return True
 
     def process_time_series(self):
-        self.logger.info("Listening for incoming time-series task...")
+        LOGGER.info("Listening for incoming time-series task...")
         try:
             mh = MessageHandler()
 
@@ -137,7 +135,7 @@ class BaseService:
             self.log_config(run_configs["time_series"])
 
             self.exp_dir = self.create_experiment_directory(self.data_dir)
-            self.logger.info(f"Experiment directory created: {self.exp_dir}")
+            LOGGER.info(f"Experiment directory created: {self.exp_dir}")
 
             model = self.load_or_create_model(run_configs["sail"])
             query_session = self.get_query_session(run_configs["time_series"])
@@ -158,13 +156,13 @@ class BaseService:
             # publish predictions
             self.publish_predictions(predictions)
 
-            self.logger.info(
+            LOGGER.info(
                 f"Task finished successfully. Model saved to {self.exp_dir}/model \n"
             )
 
         except Exception as e:
-            self.logger.error(f"Error processing new request:")
-            self.logger.exception(e)
+            LOGGER.error(f"Error processing new request:")
+            LOGGER.exception(e)
         finally:
             ray.shutdown()
 
@@ -173,4 +171,4 @@ class BaseService:
             method(**kwargs)
 
     def run(self):
-        self.logger.info(f"Service started: {self.name}")
+        LOGGER.info(f"Service started: {self.name}")

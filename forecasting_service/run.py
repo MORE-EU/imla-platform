@@ -1,12 +1,14 @@
 import os
 
-os.environ["TUNE_DISABLE_SIGINT_HANDLER"] = "1"
+import config
+import more_utils
+
+more_utils.set_logging_level(config.LOGGING_LEVEL)
 import signal
-import tempfile
 import sys
+import tempfile
 from argparse import ArgumentParser
 
-import config
 from more_utils.messaging import RabbitMQFactory
 from more_utils.persistence.modelardb import ModelarDB
 
@@ -42,7 +44,6 @@ def run_service(data_dir):
         service = ForecastingService(
             modelardb_conn=modelardb_conn,
             message_broker=message_broker,
-            logging_level=config.LOGGING_LEVEL,
             data_dir=data_dir,
         )
         service.run()

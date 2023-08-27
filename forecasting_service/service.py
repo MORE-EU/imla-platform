@@ -1,3 +1,4 @@
+import json
 import os
 
 from sail.models.auto_ml.auto_pipeline import SAILAutoPipeline
@@ -5,27 +6,29 @@ from sail.pipeline import SAILPipeline
 
 from forecasting_service.base import BaseService
 from forecasting_service.parser import param_parser, flatten_list
+from more_utils.logging import configure_logger
+
+LOGGER = configure_logger(logger_name="ForecastingService", package_name=None)
 
 
 class ForecastingService(BaseService):
-    def __init__(self, modelardb_conn, message_broker, logging_level, data_dir) -> None:
+    def __init__(self, modelardb_conn, message_broker, data_dir) -> None:
         super(ForecastingService, self).__init__(
             self.__class__.__name__,
             modelardb_conn,
             message_broker,
-            logging_level,
             data_dir,
         )
 
     def load_or_create_model(self, configs):
         if configs["model_path"]:
             model = SAILAutoPipeline.load_model(configs["model_path"])
-            self.logger.info(
+            LOGGER.info(
                 f"SAILAutoPipeline loaded successfully from - [{configs['model_path']}]."
             )
         else:
             model = self.create_model_instance(configs)
-            self.logger.info("SAILAutoPipeline created successfully.")
+            LOGGER.info("SAILAutoPipeline created successfully.")
 
         return model
 
