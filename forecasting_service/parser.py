@@ -95,34 +95,3 @@ def flatten_list(param_list):
             flatten_grid.update(param_grid)
         return flatten_grid
     return param_list
-
-
-def arc_distance(X):
-    theta_1 = X.pickup_longitude
-    phi_1 = X.pickup_latitude
-    theta_2 = X.dropoff_longitude
-    phi_2 = X.dropoff_latitude
-
-    temp = (
-        np.sin((theta_2 - theta_1) / 2 * np.pi / 180) ** 2
-        + np.cos(theta_1 * np.pi / 180)
-        * np.cos(theta_2 * np.pi / 180)
-        * np.sin((phi_2 - phi_1) / 2 * np.pi / 180) ** 2
-    )
-    distance = 2 * np.arctan2(np.sqrt(temp), np.sqrt(1 - temp))
-    X["arc_distance"] = distance * 3958.8
-    return X
-
-
-def direction_angle(X):
-    theta_1 = X.pickup_longitude
-    phi_1 = X.pickup_latitude
-    theta_2 = X.dropoff_longitude
-    phi_2 = X.dropoff_latitude
-
-    dtheta = theta_2 - theta_1
-    dphi = phi_2 - phi_1
-    radians = np.arctan2(dtheta, dphi)
-
-    X["direction_angle"] = np.rad2deg(radians)
-    return X

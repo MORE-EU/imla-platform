@@ -12,18 +12,6 @@ sail:
 
   steps: &steps
     - type: tuple
-      name: arc_distance
-      class: sklearn.preprocessing.FunctionTransformer
-      params:
-        - name: func
-          func: forecasting_service.parser.arc_distance
-    - type: tuple
-      name: direction_angle
-      class: sklearn.preprocessing.FunctionTransformer
-      params:
-        - name: func
-          func: forecasting_service.parser.direction_angle
-    - type: tuple
       name: encode_date
       class: sklearn.compose.ColumnTransformer
       transformers:
