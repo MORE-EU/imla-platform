@@ -6,7 +6,7 @@ from pyarrow.parquet import ParquetFile
 import pyarrow
 
 
-LOGGER = configure_logger(logger_name="ForecastingService", package_name=None)
+LOGGER = configure_logger(logger_name="DataStream", package_name=None)
 
 
 class DataStream:
