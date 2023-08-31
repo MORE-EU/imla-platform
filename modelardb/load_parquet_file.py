@@ -30,10 +30,8 @@ def create_model_table(flight_client, table_name, schema, error_bound):
     # Execute the CREATE MODEL TABLE command.
     action = flight.Action("CommandStatementUpdate", str.encode(sql))
     results = flight_client.do_action(action)
-    if results:
-        print(next(results))
-    else:
-        print(f"Table: {table_name} created Successfully.")
+    print(list(results))
+
 
 def read_parquet_file_or_folder(path):
     # Read Apache Parquet file or folder.
@@ -52,7 +50,7 @@ def read_parquet_file_or_folder(path):
             columns.append((safe_name, pyarrow.float32()))
         elif field.type == pyarrow.int64():
             columns.append((safe_name, pyarrow.float32()))
-        elif field.name in ["pickup_datetime","dropoff_datetime","datetime"]:
+        elif field.type == pyarrow.timestamp("us"):
             columns.append((field.name, pyarrow.timestamp("ms")))
         else:
             columns.append((safe_name, field.type))
@@ -73,16 +71,15 @@ def do_put_arrow_table(flight_client, table_name, arrow_table):
     # Flush the data to disk.
     action = flight.Action("FlushMemory", b"")
     results = flight_client.do_action(action)
-    if results:
-        print(next(results))
-    else:
-        print("Flushed compressed data buffers.")
+    print(list(results))
 
 
 # Main Function.
 if __name__ == "__main__":
     if len(sys.argv) < 4:
-        print(f"usage: {sys.argv[0]} host_address table parquet_file_or_folder [error_bound]")
+        print(
+            f"usage: {sys.argv[0]} host_address table parquet_file_or_folder [error_bound]"
+        )
         sys.exit(1)
 
     flight_client = flight.FlightClient(f"grpc://{sys.argv[1]}")

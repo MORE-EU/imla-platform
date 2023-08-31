@@ -1,6 +1,3 @@
-import json
-import os
-
 from sail.models.auto_ml.auto_pipeline import SAILAutoPipeline
 from sail.pipeline import SAILPipeline
 
@@ -65,7 +62,7 @@ class ForecastingService(BaseService):
             return False
 
         time_stamps = ts_batch[timestamp_col]
-        X = ts_batch.drop([target, timestamp_col], axis=1)
+        X = ts_batch.drop([target], axis=1)
         y = ts_batch[target]
 
         predictions = {}

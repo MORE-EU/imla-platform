@@ -29,7 +29,7 @@ sail:
         - name: strategy
           value: mean
     - name: standard_scalar
-      class: sail.transfomers.river.preprocessing.StandardScaler
+      class: sail.transformers.river.preprocessing.StandardScaler
     - name: classifier
       value: passthrough
 
@@ -91,8 +91,9 @@ sail:
 
   pipeline_strategy: DetectAndIncrement
 
-time_series:
-  model_table: wind_turbine
+data_stream:
+  source: modelardb # modelardb or local_file
+  model_table_or_path: wind_turbine # set path to a file for local_file
   target: active_power
   timestamp_col: datetime 
   selected_features: [] # empty means use all features
@@ -102,3 +103,5 @@ time_series:
   data_limit: 100 # put null for all data
   data_batch_size: 50
   data_ingestion_freq: 0 #ingestion frequency in sec
+
+save_model_after_training: false
