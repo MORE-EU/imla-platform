@@ -50,14 +50,16 @@ spec:
         app: modelardbd
     spec:
       containers:
-      - name: modelardbd-rs-container
+      - name: modelardbd-rs
         image: dhavalsalwala/modelardb-rs:latest
+        imagePullPolicy: IfNotPresent
         volumeMounts:
           - mountPath: /data
             name: modelardbd-pvc
         resources: {}
         ports:
         - containerPort: 9999
+        command: ["target/release/modelardbd", "edge", "/data"]
       # volumes:
       #   - name: modelardbd-data
       #     persistentVolumeClaim:
@@ -71,7 +73,7 @@ spec:
       storageClassName: modelardbd-storage
       resources:
         requests:
-          storage: 5Gi
+          storage: 100Gi
       
 
 ---
