@@ -48,10 +48,12 @@ class ForecastingService(BaseService):
         sail_auto_pipeline_params["incremental_training"] = configs[
             "incremental_training"
         ]
-        sail_auto_pipeline_params["pipeline_strategy"] = configs["pipeline_strategy"]
         sail_auto_pipeline_params["drift_detector"] = param_parser(
             configs["drift_detector"]
         )
+        sail_auto_pipeline_params["pipeline_strategy"] = configs["pipeline_strategy"]
+        sail_auto_pipeline_params["verbosity_level"] = configs["verbosity_level"]
+        sail_auto_pipeline_params["verbosity_interval"] = configs["verbosity_interval"]
 
         return SAILAutoPipeline(**sail_auto_pipeline_params)
 

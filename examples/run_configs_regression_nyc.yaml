@@ -127,7 +127,7 @@ sail:
       ref:  *steps
     - name: scoring
       class: river.metrics.R2
-    - name: verbosity
+    - name: verbosity_level
       value: 1
     
   parameter_grid:
@@ -189,6 +189,8 @@ sail:
       value: difference
 
   pipeline_strategy: DetectAndIncrement
+  verbosity_level: 1
+  verbosity_interval: 4 # default is null
 
 data_stream:
   source: local_file # modelardb or local_file
@@ -199,7 +201,7 @@ data_stream:
   classes: [] # only applicable for classification problem and when incremental_training is enabled
   from_date: null
   to_date: null
-  data_limit: 200 # put null for all data
+  data_limit: 1000 # put null for all data
   data_batch_size: 50
   data_ingestion_freq: 0 #ingestion frequency in sec
 

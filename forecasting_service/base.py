@@ -65,10 +65,10 @@ class BaseService:
         model.save_model(os.path.join(self.exp_dir, "model"))
 
     def process_ts_batch(self, ts_batch, timestamp_col):
-        LOGGER.info(f"Processing new data batch... ")
+        LOGGER.debug(f"Processing new data batch... ")
         max = ts_batch[timestamp_col].max()
         min = ts_batch[timestamp_col].min()
-        LOGGER.info(f"Batch Received: From {min} to {max}")
+        LOGGER.debug(f"Batch Received: From {min} to {max}")
         return True
 
     def process_time_series(self):
