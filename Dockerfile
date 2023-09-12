@@ -11,6 +11,9 @@ ENV PYTHONPATH="${PYTHONPATH}:/service"
 COPY requirements.txt /service/requirements.txt
 RUN python -m pip install --no-cache-dir --upgrade -r /service/requirements.txt
 
+# Needed for tensorboard logging via the torch framework
+RUN python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+
 ## add all the rest of the code
 ADD forecasting_service /service/forecasting_service
 

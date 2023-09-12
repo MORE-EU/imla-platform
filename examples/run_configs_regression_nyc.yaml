@@ -194,7 +194,7 @@ sail:
 
 data_stream:
   source: local_file # modelardb or local_file
-  model_table_or_path: /home/dhaval/dev/Datasets/yellow_tripdata_2015.parquet
+  model_table_or_path: /dataset/yellow_tripdata_2015.parquet
   target: trip_duration_min
   timestamp_col: pickup_datetime 
   selected_features: [] # empty means use all features

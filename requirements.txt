@@ -3,4 +3,4 @@ pyyaml
 fsspec
 ray==2.5.1
 git+https://github.com/IBM/more-utils.git
-git+https://github.com/IBM/sail.git#egg=sail[river,ray,pytorch]
+git+https://github.com/IBM/sail.git#egg=sail[river,ray]
