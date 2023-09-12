@@ -15,22 +15,33 @@
 version: "3.8"
 
 services:
-  modelardbd:
-    hostname: modelardbd
-    image: dhavalsalwala/modelardb-rs:latest
-    container_name: modelardbd
+  minio-server:
+    image: minio/minio
+    container_name: minio-server
     ports:
-      - "9999:9999"
+      - "9000:9000"
+      - "9001:9001"
     environment:
-      AWS_ACCESS_KEY_ID: minioadmin
-      AWS_SECRET_ACCESS_KEY: minioadmin
-      AWS_DEFAULT_REGION: eu-central-1
-      AWS_ENDPOINT: http://minio-server:9000
-      AWS_ALLOW_HTTP: true
-    volumes:
-      - ./modelardb_data:/data
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server --console-address ":9001" /data
+
+  create-bucket:
+    image: minio/mc
+    container_name: create-bucket
+    depends_on:
+      - minio-server
+    entrypoint:
+      /bin/sh -c "
+      sleep 3s;
+      /usr/bin/mc config host add modelardata-minio http://minio-server:9000 minioadmin minioadmin;
+      /usr/bin/mc mb modelardata-minio/modelardata;
+      /usr/bin/mc mb modelardata-minio/modelardata-test;
+      exit 0;
+      "
 
 networks:
   default:
     name: more-network
     driver: bridge
+

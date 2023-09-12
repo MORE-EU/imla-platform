@@ -68,17 +68,24 @@ def do_put_arrow_table(flight_client, table_name, arrow_table):
     writer.write(arrow_table)
     writer.close()
 
-    # Flush the data to disk.
+
+def export_to_local(flight_client):
     action = flight.Action("FlushMemory", b"")
-    results = flight_client.do_action(action)
-    print(list(results))
+    result = flight_client.do_action(action)
+    print(list(result))
+
+
+def export_to_cos(flight_client):
+    action = flight.Action("FlushEdge", b"")
+    result = flight_client.do_action(action)
+    print(list(result))
 
 
 # Main Function.
 if __name__ == "__main__":
     if len(sys.argv) < 4:
         print(
-            f"usage: {sys.argv[0]} host_address table parquet_file_or_folder [error_bound]"
+            f"usage: {sys.argv[0]} host_address table parquet_file_or_folder [error_bound] flush_mode[local, cos]"
         )
         sys.exit(1)
 
@@ -86,7 +93,14 @@ if __name__ == "__main__":
     table_name = sys.argv[2]
     arrow_table = read_parquet_file_or_folder(sys.argv[3])
     error_bound = sys.argv[4]
+    flush_mode = sys.argv[5]
 
     if not table_exists(flight_client, table_name):
         create_model_table(flight_client, table_name, arrow_table.schema, error_bound)
     do_put_arrow_table(flight_client, table_name, arrow_table)
+
+    # Flush the data to disk.
+    if flush_mode == "local":
+        export_to_local(flight_client)
+    elif flush_mode == "cos":
+        export_to_cos(flight_client)
