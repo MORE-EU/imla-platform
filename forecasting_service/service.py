@@ -44,6 +44,7 @@ class ForecastingService(BaseService):
         sail_auto_pipeline_params["search_method_params"] = flatten_list(
             param_parser(configs["search_method_params"])
         )
+        sail_auto_pipeline_params["search_method_params"]["storage_path"] = self.exp_dir
         sail_auto_pipeline_params["search_data_size"] = configs["search_data_size"]
         sail_auto_pipeline_params["incremental_training"] = configs[
             "incremental_training"
@@ -54,6 +55,10 @@ class ForecastingService(BaseService):
         sail_auto_pipeline_params["pipeline_strategy"] = configs["pipeline_strategy"]
         sail_auto_pipeline_params["verbosity_level"] = configs["verbosity_level"]
         sail_auto_pipeline_params["verbosity_interval"] = configs["verbosity_interval"]
+        sail_auto_pipeline_params["tensorboard_log_dir"] = configs[
+            "tensorboard_log_dir"
+        ]
+        sail_auto_pipeline_params["tensorboard_log_dir"] = self.exp_dir
 
         return SAILAutoPipeline(**sail_auto_pipeline_params)
 
