@@ -59,11 +59,34 @@ spec:
         resources: {}
         ports:
         - containerPort: 9999
-        command: ["target/release/modelardbd", "edge", "/data"]
-      # volumes:
-      #   - name: modelardbd-data
-      #     persistentVolumeClaim:
-      #       claimName: modelardbd-pvc
+        env:
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom: 
+              secretKeyRef:
+                name: more-secret
+                key: MINIO_ROOT_USER
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom: 
+              secretKeyRef:
+                name: more-secret
+                key: MINIO_ROOT_PASSWORD
+          - name: AWS_DEFAULT_REGION
+            valueFrom: 
+              configMapKeyRef:
+                name: more-configmap
+                key: AWS_DEFAULT_REGION
+          - name: AWS_ENDPOINT
+            valueFrom: 
+              configMapKeyRef:
+                name: more-configmap
+                key: AWS_ENDPOINT
+          - name: AWS_ALLOW_HTTP
+            valueFrom: 
+              configMapKeyRef:
+                name: more-configmap
+                key: AWS_ALLOW_HTTP
+        command: ["target/release/modelardbd", "edge", "/data", "s3://modelardata"]
+
   volumeClaimTemplates:
   - metadata:
       name: modelardbd-pvc

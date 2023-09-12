@@ -2,6 +2,36 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
+  name: minio-storage
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: minio-pv
+spec:
+  capacity:
+    storage: 100Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: minio-storage
+  local:
+    path: /data/1/k8s/minio_data
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key:  node-role.kubernetes.io/control-plane
+          operator: Exists 
+
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
   name: modelardbd-storage
 provisioner: kubernetes.io/no-provisioner
 volumeBindingMode: WaitForFirstConsumer
@@ -13,14 +43,14 @@ metadata:
   name: modelardbd-pv
 spec:
   capacity:
-    storage: 5Gi
+    storage: 100Gi
   volumeMode: Filesystem
   accessModes:
   - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
   storageClassName: modelardbd-storage
   local:
-    path: /home/dhaval/dev/modelardb_data
+    path: /data/1/k8s/modelardb_data
   nodeAffinity:
     required:
       nodeSelectorTerms:
