@@ -42,6 +42,11 @@
       command: kubectl label --overwrite nodes {{ item }} node-role.kubernetes.io/worker=
       loop:
         - worker1
+        - worker2
+        - worker3
+        - worker4
+        - worker5
+        - worker6
 
     - name: Set current k8s namespace
       become_user: "{{ lookup('env','USER') }}"
