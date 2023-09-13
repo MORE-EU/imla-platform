@@ -1,6 +1,6 @@
 ---
 - name: Ansible playbook to prepare node as K8s worker
-  hosts: more-workers
+  hosts: more_workers
   become: yes
   gather_facts: true
   vars:
@@ -88,12 +88,18 @@
     - debug:
         var: command_output.stdout_lines
 
-    - name: "Download Container Runtime (containerd.io {{ containerd_ver }}) for Kubernetes"
-      unarchive:
-        src: https://github.com/containerd/containerd/releases/download/v{{ containerd_ver }}/containerd-{{ containerd_ver }}-linux-amd64.tar.gz
+    # - name: "Download Container Runtime (containerd.io {{ containerd_ver }}) for Kubernetes"
+    #   unarchive:
+    #     src: https://github.com/containerd/containerd/releases/download/v{{ containerd_ver }}/containerd-{{ containerd_ver }}-linux-amd64.tar.gz
+    #     dest: "{{ containerd_bin_path }}"
+    #     extra_opts: [--strip-components=1]
+    #     remote_src: yes
+
+    - name: Copy Container Runtime from master to worker node
+      copy: 
+        src: /data/1/k8s/binaries/containerd/
         dest: "{{ containerd_bin_path }}"
-        extra_opts: [--strip-components=1]
-        remote_src: yes
+        mode: u+x,g+x,o+x
 
     - name: Download containerd service file
       get_url:
@@ -116,10 +122,16 @@
         state: restarted
         daemon_reload: yes
 
-    - name: Download runc
-      get_url:
-        url: https://github.com/opencontainers/runc/releases/download/v1.1.7/runc.amd64
-        dest: "{{ tmp_dir }}"
+    # - name: Download runc
+    #   get_url:
+    #     url: https://github.com/opencontainers/runc/releases/download/v1.1.7/runc.amd64
+    #     dest: "{{ tmp_dir }}"
+
+    - name: Copy runc from master to worker node
+      copy: 
+        src: /data/1/k8s/binaries/runc.amd64
+        dest: "{{tmp_dir}}/runc.amd64"
+        mode: u+x,g+x,o+x
 
     - name: Install runc for containers
       become: true
