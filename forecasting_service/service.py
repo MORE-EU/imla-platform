@@ -1,6 +1,6 @@
 from sail.models.auto_ml.auto_pipeline import SAILAutoPipeline
 from sail.pipeline import SAILPipeline
-
+import os
 from forecasting_service.base import BaseService
 from forecasting_service.parser import param_parser, flatten_list
 from more_utils.logging import configure_logger
@@ -44,7 +44,15 @@ class ForecastingService(BaseService):
         sail_auto_pipeline_params["search_method_params"] = flatten_list(
             param_parser(configs["search_method_params"])
         )
-        sail_auto_pipeline_params["search_method_params"]["storage_path"] = self.exp_dir
+
+        if os.environ.get("POD_NAME"):
+            exp_dir = self.exp_dir.split("/")[-1]
+            data_dir = self.exp_dir.replace(exp_dir, "")
+            storage_path = os.path.join(data_dir, os.environ.get("POD_NAME"), exp_dir)
+        else:
+            storage_path = self.exp_dir
+
+        sail_auto_pipeline_params["search_method_params"]["storage_path"] = storage_path
         sail_auto_pipeline_params["search_data_size"] = configs["search_data_size"]
         sail_auto_pipeline_params["incremental_training"] = configs[
             "incremental_training"
