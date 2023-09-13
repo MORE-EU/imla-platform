@@ -73,12 +73,12 @@ metadata:
   name: forecasting-pv
 spec:
   capacity:
-    storage: 5Gi
+    storage: 100Gi
   accessModes:
     - ReadWriteMany
   storageClassName: nfs-client
   nfs:
-    server: nfs-share.sl.cloud9.ibm.com
-    path: /mnt/nfs
+    server: master.more2020.eu
+    path: /data/1/k8s/forecasting_data
   mountOptions:
     - nfsvers=4.2

@@ -20,18 +20,17 @@ spec:
         node-role.kubernetes.io/worker: ""
       containers:
       - name: forecasting-container
-        image: dhavalsalwala/forecasting-service:latest
-        imagePullPolicy: Always
-        # command: ["python", "forecasting_service/run.py"]
+        image: dhavalsalwala/forecasting-service:0.7.3
+        imagePullPolicy: IfNotPresent
         args: ["--data_dir", "/data"]
         resources: {}
         volumeMounts:
           - name: forecasting-data
             mountPath: /data
             subPathExpr: $(POD_NAME)
-          # - name: shm
-          #   mountPath: /dev/shm
-            
+          - name: forecasting-datasets
+            mountPath: /datasets
+
         env:
         - name: POD_NAME
           valueFrom:
@@ -89,16 +88,11 @@ spec:
               name: more-configmap
               key: RABBITMQ_PRODUCER_QUEUE
 
-      # initContainers:
-      # - name: init-modelardbd-service
-      #   image: dhavalsalwala/forecasting-service:latest
-      #   command: ["while [[ $(kubectl get pods -l app=modelardbd -o 'jsonpath={..status.conditions[?(@.type=='Ready')].status}') != 'True' ]]; do echo 'waiting for pod' && sleep 1; done"]
-      
       volumes:
       - name: forecasting-data
         persistentVolumeClaim:
           claimName: forecasting-nfs
-      # - name: shm
-      #   emptyDir:
-      #     sizeLimit: "10.84G"
-      #     medium: Memory
+      - name: forecasting-datasets
+        nfs:
+          server: master.more2020.eu
+          path: /data/1/k8s/datasets

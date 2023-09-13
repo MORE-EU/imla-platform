@@ -11,7 +11,7 @@ metadata:
   labels:
     controller-tools.k8s.io: "1.0"
     # A unique identifier for the head node and workers of this cluster.
-  name: more-ray-cluster
+  name: ray-cluster
 spec:
   rayVersion: '2.5.1'
   # Ray head pod template
@@ -42,7 +42,7 @@ spec:
         #   fsGroup: 0
         containers:
         - name: ray-head
-          image: dhavalsalwala/ray
+          image: rayproject/ray:2.5.1-py310
           # securityContext:
           #   allowPrivilegeEscalation: true
           # Optimal resource allocation will depend on your Kubernetes infrastructure and might
@@ -68,16 +68,17 @@ spec:
               exec:
                 command: ["/bin/sh","-c","ray stop"]
           volumeMounts:
-            # - name: forecasting-data
-            #   mountPath: /data
+            - name: ray-output
+              mountPath: /data
             - mountPath: /tmp/ray
               name: ray-logs
         volumes:
           - name: ray-logs
             emptyDir: {}
-          # - name: forecasting-data
-          #   persistentVolumeClaim:
-          #     claimName: forecasting-nfs
+          - name: ray-output
+            nfs:
+              server: master.more2020.eu
+              path: /data/1/k8s/forecasting_data
 
   workerGroupSpecs:
   # the pod replicas in this group typed worker
@@ -85,7 +86,7 @@ spec:
     minReplicas: 2
     maxReplicas: 2
     # logical group name, for this called large-group, also can be functional
-    groupName: worker-group
+    groupName: group
     # If worker pods need to be added, we can increment the replicas.
     # If worker pods need to be removed, we decrement the replicas, and populate the workersToDelete list.
     # The operator will remove pods from the list until the desired number of replicas is satisfied.
@@ -107,7 +108,7 @@ spec:
           node-role.kubernetes.io/worker: ""
         containers:
         - name: ray-worker
-          image: rayproject/ray:2.5.1
+          image: rayproject/ray:2.5.1-py310
           securityContext:
             runAsUser: 0
           # Optimal resource allocation will depend on your Kubernetes infrastructure and might
@@ -128,8 +129,8 @@ spec:
           # use volumeMounts.Optional.
           # Refer to https://kubernetes.io/docs/concepts/storage/volumes/
           volumeMounts:
-            # - name: forecasting-data
-            #   mountPath: /data
+            - name: ray-output
+              mountPath: /data
             - mountPath: /tmp/ray
               name: ray-logs
         # use volumes
@@ -137,7 +138,8 @@ spec:
         volumes:
           - name: ray-logs
             emptyDir: {}
-          # - name: forecasting-data
-          #   persistentVolumeClaim:
-          #     claimName: forecasting-nfs
+          - name: ray-output
+            nfs:
+              server: master.more2020.eu
+              path: /data/1/k8s/forecasting_data
 ######################status#################################
