@@ -66,9 +66,14 @@ class BaseService:
 
     def process_ts_batch(self, ts_batch, timestamp_col):
         LOGGER.debug(f"Processing new data batch... ")
-        max = ts_batch[timestamp_col].max()
-        min = ts_batch[timestamp_col].min()
-        LOGGER.debug(f"Batch Received: From {min} to {max}")
+
+        if timestamp_col:
+            max = ts_batch[timestamp_col].max()
+            min = ts_batch[timestamp_col].min()
+            LOGGER.debug(f"Batch Received: From {min} to {max}. Size: {len(ts_batch)}")
+        else:
+            LOGGER.debug(f"Batch Received. Size: {len(ts_batch)}")
+
         return True
 
     def process_time_series(self):

@@ -73,15 +73,19 @@ class ForecastingService(BaseService):
         ):
             return False
 
-        time_stamps = ts_batch[timestamp_col]
+        if timestamp_col:
+            indexes = ts_batch[timestamp_col]
+        else:
+            indexes = range(len(ts_batch))
+
         X = ts_batch.drop([target], axis=1)
         y = ts_batch[target]
 
         predictions = {}
         if model.best_pipeline:
             preds = model.predict(X)
-            for time, pred in zip(time_stamps, preds):
-                predictions[str(time)] = pred
+            for index, pred in zip(indexes, preds):
+                predictions[str(index)] = pred
 
         model.train(X, y, **fit_params)
 
