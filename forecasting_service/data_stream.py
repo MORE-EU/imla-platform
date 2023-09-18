@@ -74,13 +74,12 @@ class LocalDataStream(DataStream):
         super(LocalDataStream, self).__init__(data_stream)
 
     def get_data_session(self):
-        selected_features = self.data_configs["selected_features"]
         file_path = self.data_configs["model_table_or_path"]
         extension = pathlib.Path(file_path).suffix
         if ".csv" == extension.lower():
             time_series_df = pd.read_csv(
                 file_path,
-                usecols=selected_features if len(selected_features) > 0 else None,
+                usecols=self.data_configs["selected_features"],
                 nrows=self.data_configs["data_limit"],
                 chunksize=self.data_configs["data_batch_size"],
             )
@@ -92,7 +91,7 @@ class LocalDataStream(DataStream):
                 parquet_file,
                 self.data_configs["data_batch_size"],
                 self.data_configs["data_limit"],
-                selected_features,
+                self.data_configs["selected_features"],
             )
         else:
             raise Exception(
@@ -110,15 +109,22 @@ class LocalDataStream(DataStream):
         return data_session
 
     def iter_parquet_file(
-        self, parquet_file, batch_size, total_rows, selected_features
+        self, parquet_file, batch_size, total_rows=None, selected_features=None
     ):
         n_rows = 0
         batch_gen = parquet_file.iter_batches(
-            columns=selected_features if len(selected_features) > 0 else None,
+            columns=selected_features,
             use_threads=True,
             batch_size=batch_size,
         )
-        while n_rows < total_rows:
+
+        def check_loop_condition(n_rows, total_rows):
+            if total_rows:
+                return n_rows < total_rows
+            else:
+                return True
+
+        while check_loop_condition(n_rows, total_rows):
             yield pyarrow.Table.from_batches([next(batch_gen)]).to_pandas()
             n_rows += batch_size
 
