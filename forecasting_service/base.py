@@ -117,23 +117,21 @@ class BaseService:
                     run_configs["sail"]["steps"][-1]["name"]
                 )
 
-                with self.tracer.trace("Pipeline-train"):
+                with self.tracer.trace("Pipeline-train") as train_span:
+                    self.tracer._parent_span = train_span
                     predictions = {}
                     for ts_batch in data_session:
                         if data_stream.validate_batch(ts_batch):
-                            with self.tracer.trace_as_current(
-                                f"Pipeline-train-epoch-{model.verbosity.current_epoch_n}",
-                                verbose=model.verbosity.get(),
-                            ):
-                                prediction = self.process_ts_batch(
-                                    model,
-                                    ts_batch,
-                                    target,
-                                    timestamp_col,
-                                    fit_params,
-                                )
+                            prediction = self.process_ts_batch(
+                                model,
+                                ts_batch,
+                                target,
+                                timestamp_col,
+                                fit_params,
+                            )
                             predictions.update(prediction)
                         data_stream.wait()
+                    del self.tracer._parent_span
 
                 # save trained model instance
                 if run_configs["save_model_after_training"]:

@@ -5,6 +5,7 @@ from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.jaeger.thrift import JaegerExporter
+from opentelemetry.trace.propagation import set_span_in_context
 
 if os.environ.get("POD_NAME"):
     pod_name = os.environ.get("POD_NAME")
@@ -29,24 +30,38 @@ class TracingClient:
         else:
             self.jaeger_exporter = None
 
-        self.tracer = None
+        self._tracer = None
 
     def create_instance(self, tracer_name):
         if self.jaeger_exporter:
             trace.get_tracer_provider().add_span_processor(
                 BatchSpanProcessor(self.jaeger_exporter)
             )
-            self.tracer = trace.get_tracer(tracer_name)
+            self._tracer = trace.get_tracer(tracer_name)
 
-    def trace_as_current(self, span_name, verbose=1):
-        if self.tracer and verbose == 1:
-            return self.tracer.start_as_current_span(span_name)
+    def trace_as_current(
+        self, span_name, verbose=1, kind=trace.SpanKind.INTERNAL, context=None, **kwargs
+    ):
+        if self._tracer and verbose == 1:
+            if "epoch_no" in kwargs:
+                span_name = f"Epoch-{kwargs['epoch_no']}-{span_name}"
+            if hasattr(self, "_parent_span"):
+                context = set_span_in_context(self._parent_span)
+            return self._tracer.start_as_current_span(
+                span_name, context=context, kind=kind
+            )
         else:
             return DummySpan()
 
-    def trace(self, span_name, verbose=1):
-        if self.tracer and verbose == 1:
-            return self.tracer.start_span(span_name)
+    def trace(
+        self, span_name, verbose=1, kind=trace.SpanKind.INTERNAL, context=None, **kwargs
+    ):
+        if self._tracer and verbose == 1:
+            if "epoch_no" in kwargs:
+                span_name = f"Epoch-{kwargs['epoch_no']}-{span_name}"
+            if hasattr(self, "_parent_span"):
+                context = set_span_in_context(self._parent_span)
+            return self._tracer.start_span(span_name, context=context, kind=kind)
         else:
             return DummySpan()
 
