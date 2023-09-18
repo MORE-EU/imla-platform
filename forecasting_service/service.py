@@ -63,7 +63,9 @@ class ForecastingService(BaseService):
         sail_auto_pipeline_params["pipeline_strategy"] = configs["pipeline_strategy"]
         sail_auto_pipeline_params["verbosity_level"] = configs["verbosity_level"]
         sail_auto_pipeline_params["verbosity_interval"] = configs["verbosity_interval"]
-        sail_auto_pipeline_params["tensorboard_log_dir"] = self.exp_dir
+
+        if configs["tensorboard_log_dir"]:
+            sail_auto_pipeline_params["tensorboard_log_dir"] = self.exp_dir
 
         return SAILAutoPipeline(**sail_auto_pipeline_params)
 
