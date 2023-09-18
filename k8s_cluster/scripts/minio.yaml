@@ -19,9 +19,6 @@ spec:
       containers:
         - name: minio-server
           image: minio/minio
-          volumeMounts:
-            - mountPath: /data
-              name: modelardbd-data
           resources: {}
           ports:
             - containerPort: 9000
