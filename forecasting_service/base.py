@@ -121,9 +121,16 @@ class BaseService:
                     predictions = {}
                     for ts_batch in data_session:
                         if data_stream.validate_batch(ts_batch):
-                            prediction = self.process_ts_batch(
-                                model, ts_batch, target, timestamp_col, fit_params
-                            )
+                            with self.tracer.trace(
+                                "Pipeline-train-batch", verbose=model.verbosity.get()
+                            ):
+                                prediction = self.process_ts_batch(
+                                    model,
+                                    ts_batch,
+                                    target,
+                                    timestamp_col,
+                                    fit_params,
+                                )
                             predictions.update(prediction)
                         data_stream.wait()
 

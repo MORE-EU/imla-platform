@@ -38,14 +38,14 @@ class TracingClient:
             )
             self.tracer = trace.get_tracer(tracer_name)
 
-    def trace_as_current(self, span_name):
-        if self.tracer:
+    def trace_as_current(self, span_name, verbose=1):
+        if self.tracer and verbose == 1:
             return self.tracer.start_as_current_span(span_name)
         else:
             return DummySpan()
 
-    def trace(self, span_name):
-        if self.tracer:
+    def trace(self, span_name, verbose=1):
+        if self.tracer and verbose == 1:
             return self.tracer.start_span(span_name)
         else:
             return DummySpan()
