@@ -9,12 +9,15 @@ LOGGER = configure_logger(logger_name="ForecastingService", package_name=None)
 
 
 class ForecastingService(BaseService):
-    def __init__(self, modelardb_conn, message_broker, data_dir) -> None:
+    def __init__(
+        self, modelardb_conn, message_broker, data_dir, tracer
+    ) -> None:
         super(ForecastingService, self).__init__(
             self.__class__.__name__,
             modelardb_conn,
             message_broker,
             data_dir,
+            tracer,
         )
 
     def load_or_create_model(self, configs):
@@ -66,6 +69,8 @@ class ForecastingService(BaseService):
 
         if configs["tensorboard_log_dir"]:
             sail_auto_pipeline_params["tensorboard_log_dir"] = self.exp_dir
+
+        sail_auto_pipeline_params["tracer"] = self.tracer
 
         return SAILAutoPipeline(**sail_auto_pipeline_params)
 

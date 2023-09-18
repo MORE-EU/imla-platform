@@ -11,7 +11,7 @@ from argparse import ArgumentParser
 
 from more_utils.messaging import RabbitMQFactory
 from more_utils.persistence.modelardb import ModelarDB
-
+from forecasting_service.tracing import TracingClient
 from forecasting_service.service import ForecastingService
 
 modelardb_configs = {
@@ -41,10 +41,13 @@ def run_service(data_dir):
     try:
         modelardb_conn = ModelarDB.connect(**modelardb_configs)
         message_broker = RabbitMQFactory.create_context(args=broker_configs)
+        tracer = TracingClient(config.TRACER_HOST, config.TRACER_PORT)
+
         service = ForecastingService(
             modelardb_conn=modelardb_conn,
             message_broker=message_broker,
             data_dir=data_dir,
+            tracer=tracer,
         )
         service.run()
     except KeyboardInterrupt:
