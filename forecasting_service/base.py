@@ -121,8 +121,9 @@ class BaseService:
                     predictions = {}
                     for ts_batch in data_session:
                         if data_stream.validate_batch(ts_batch):
-                            with self.tracer.trace(
-                                "Pipeline-train-batch", verbose=model.verbosity.get()
+                            with self.tracer.trace_as_current(
+                                f"Pipeline-train-epoch-{model.verbosity.current_epoch_n}",
+                                verbose=model.verbosity.get(),
                             ):
                                 prediction = self.process_ts_batch(
                                     model,

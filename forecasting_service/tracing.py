@@ -50,6 +50,9 @@ class TracingClient:
         else:
             return DummySpan()
 
+    def set_attribute(self, name, value):
+        trace.get_current_span().set_attribute(name, value)
+
 
 class DummySpan:
     def __enter__(self):
