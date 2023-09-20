@@ -2,8 +2,5 @@ python-decouple
 pyyaml
 fsspec
 ray==2.5.1
-opentelemetry-api
-opentelemetry-sdk
-opentelemetry-exporter-jaeger
 git+https://github.com/IBM/more-utils.git
 git+https://github.com/IBM/sail.git#egg=sail[river,ray]

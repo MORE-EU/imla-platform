@@ -14,5 +14,4 @@ RABBITMQ_PORT = config("RABBITMQ_PORT", default=5672, cast=int)
 RABBITMQ_CONSUMER_QUEUE = config("RABBITMQ_CONSUMER_QUEUE")
 RABBITMQ_PRODUCER_QUEUE = config("RABBITMQ_PRODUCER_QUEUE")
 
-TRACER_HOST = config("TRACER_HOST", default=None)
-TRACER_PORT = config("TRACER_PORT", default=None, cast=int)
+OTLP_ENDPOINT = config("OTLP_ENDPOINT", default=None)

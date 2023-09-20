@@ -9,9 +9,7 @@ LOGGER = configure_logger(logger_name="ForecastingService", package_name=None)
 
 
 class ForecastingService(BaseService):
-    def __init__(
-        self, modelardb_conn, message_broker, data_dir, tracer
-    ) -> None:
+    def __init__(self, modelardb_conn, message_broker, data_dir, tracer) -> None:
         super(ForecastingService, self).__init__(
             self.__class__.__name__,
             modelardb_conn,
@@ -26,6 +24,7 @@ class ForecastingService(BaseService):
             LOGGER.info(
                 f"SAILAutoPipeline loaded successfully from - [{configs['model_path']}]."
             )
+            model.pipeline_strategy.tracer = self.tracer
         else:
             model = self.create_model_instance(configs)
             LOGGER.info("SAILAutoPipeline created successfully.")

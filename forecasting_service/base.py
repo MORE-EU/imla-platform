@@ -2,9 +2,8 @@ import json
 import os
 import time
 from datetime import datetime
-
-import config
 import ray
+from sail.telemetry import DummySpan
 from more_utils.logging import configure_logger
 from more_utils.time_series import TimeseriesFactory
 from ray.tune.utils.util import SafeFallbackEncoder
@@ -36,18 +35,8 @@ class BaseService:
         self.client = message_broker.client()
         self.consumer = self.client.get_consumer()
         self.publisher = self.client.get_publisher()
-        LOGGER.info(
-            f"Connected to Message Broker at {config.RABBITMQ_HOST}:{config.RABBITMQ_PORT}"
-        )
 
         self.ts_factory = TimeseriesFactory(source_db_conn=modelardb_conn)
-        modelardb_conn.create_session().close()
-        LOGGER.info(
-            f"Connected to ModelarDB at {config.MODELARDB_HOSTNAME}:{config.MODELARDB_PORT}"
-        )
-
-        # tracer configs
-        self.tracer.create_instance("ForecastingService")
 
     def create_experiment_directory(self, data_dir):
         exp_name = "ForecastingTask" + "_" + time.strftime("%d-%m-%Y_%H:%M:%S")
@@ -87,6 +76,15 @@ class BaseService:
 
         return True
 
+    def trace(self, span_name, current_span=False, *args, **kwargs):
+        if self.tracer is not None:
+            if current_span:
+                return self.tracer.trace_as_current_span(span_name, *args, **kwargs)
+            else:
+                return self.tracer.trace(span_name, *args, **kwargs)
+        else:
+            return DummySpan()
+
     def process_time_series(self):
         LOGGER.info("Listening for incoming time-series task...")
         try:
@@ -105,8 +103,8 @@ class BaseService:
             self.exp_dir, exp_name = self.create_experiment_directory(self.data_dir)
             LOGGER.info(f"Experiment directory created: {self.exp_dir}")
 
-            with self.tracer.trace_as_current(exp_name):
-                with self.tracer.trace("Pipeline-load"):
+            with self.trace(exp_name, current_span=True):
+                with self.trace("Pipeline-load"):
                     model = self.load_or_create_model(run_configs["sail"])
 
                 data_stream = DataStreamFactory.create_data_stream(
@@ -117,8 +115,7 @@ class BaseService:
                     run_configs["sail"]["steps"][-1]["name"]
                 )
 
-                with self.tracer.trace("Pipeline-train") as train_span:
-                    self.tracer._parent_span = train_span
+                with self.trace("Pipeline-train", current_span=True):
                     predictions = {}
                     for ts_batch in data_session:
                         if data_stream.validate_batch(ts_batch):
@@ -131,15 +128,14 @@ class BaseService:
                             )
                             predictions.update(prediction)
                         data_stream.wait()
-                    del self.tracer._parent_span
 
                 # save trained model instance
                 if run_configs["save_model_after_training"]:
-                    with self.tracer.trace("Pipeline-persist"):
+                    with self.trace("Pipeline-persist"):
                         self.save_model_instance(model)
 
                 # publish predictions
-                with self.tracer.trace("Pipeline-publish"):
+                with self.trace("Pipeline-publish"):
                     self.publish_predictions(predictions)
 
                 LOGGER.info(
