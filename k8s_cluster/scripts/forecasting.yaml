@@ -20,7 +20,7 @@ spec:
         node-role.kubernetes.io/worker: ""
       containers:
       - name: forecasting-container
-        image: dhavalsalwala/forecasting-service:0.7.8
+        image: dhavalsalwala/forecasting-service:0.8.1
         # imagePullPolicy: IfNotPresent
         args: ["--data_dir", "/data"]
         resources: {}
@@ -87,16 +87,11 @@ spec:
             configMapKeyRef:
               name: more-configmap
               key: RABBITMQ_PRODUCER_QUEUE
-        - name: TRACER_HOST
+        - name: OTLP_ENDPOINT
           valueFrom: 
             configMapKeyRef:
               name: more-configmap
-              key: TRACER_HOST
-        - name: TRACER_PORT
-          valueFrom: 
-            configMapKeyRef:
-              name: more-configmap
-              key: TRACER_PORT
+              key: OTLP_ENDPOINT
 
       volumes:
       - name: forecasting-data

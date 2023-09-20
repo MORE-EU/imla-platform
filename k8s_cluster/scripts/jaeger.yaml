@@ -20,7 +20,7 @@ spec:
         node-role.kubernetes.io/control-plane: ""
       containers:
         - name: jaeger-server
-          image: jaegertracing/all-in-one:1.6
+          image: jaegertracing/all-in-one:1.49
           resources: {}
           ports:
             - containerPort: 6831
@@ -55,7 +55,7 @@ spec:
       port: 6831
       targetPort: 6831
       nodePort: 31831
-    - name: jaeger-oltp
+    - name: jaeger-otlp
       protocol: TCP
       port: 4318
       targetPort: 4318
