@@ -1,0 +1,57 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tensorboard
+  namespace: more-demo
+  labels:
+    app: tensorboard
+spec:
+  replicas: 1
+  selector: 
+    matchLabels:
+      app: tensorboard
+  template:
+    metadata:
+      labels:
+        app: tensorboard
+    spec:
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+      containers:
+        - name: tensorflow
+          image: tensorflow/tensorflow:2.13.0
+          resources: {}
+          ports:
+            - containerPort: 6006
+          command:
+            - /bin/bash
+            - -c
+          args: 
+            - tensorboard --logdir /tensorboard_logs --bind_all
+          volumeMounts:
+            - mountPath: /tensorboard_logs
+              name: tensorboard-logs-dir
+
+      volumes:
+        - name: tensorboard-logs-dir
+          nfs:
+            server: master.more2020.eu
+            path: /data/1/k8s/forecasting_data
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tensorboard-service
+  namespace: more-demo
+spec:
+  type: NodePort
+  selector:
+    app: tensorboard
+  ports:
+    - name: tensorboard-dashboard
+      protocol: TCP
+      port: 6006
+      targetPort: 6006
+      nodePort: 31006
