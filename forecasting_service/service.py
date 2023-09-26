@@ -9,38 +9,42 @@ LOGGER = configure_logger(logger_name="ForecastingService", package_name=None)
 
 
 class ForecastingService(BaseService):
-    def __init__(self, modelardb_conn, message_broker, data_dir, tracer) -> None:
+    def __init__(self, modelardb_conn, message_broker, data_dir) -> None:
         super(ForecastingService, self).__init__(
             self.__class__.__name__,
             modelardb_conn,
             message_broker,
             data_dir,
-            tracer,
         )
 
-    def load_or_create_model(self, configs):
+    def load_or_create_model(self, configs, tracer):
         if configs["model_path"]:
             model = SAILAutoPipeline.load_model(configs["model_path"])
             LOGGER.info(
                 f"SAILAutoPipeline loaded successfully from - [{configs['model_path']}]."
             )
-            model.pipeline_strategy.tracer = self.tracer
+            model.pipeline_strategy.tracer = tracer
         else:
-            model = self.create_model_instance(configs)
+            model = self.create_model_instance(configs, tracer)
             LOGGER.info("SAILAutoPipeline created successfully.")
 
         return model
 
-    def create_model_instance(self, configs):
+    def create_model_instance(self, configs, tracer):
         sail_auto_pipeline_params = {}
 
         sail_auto_pipeline_params["pipeline"] = SAILPipeline(
             **flatten_list(param_parser(configs["sail_pipeline"]))
         )
 
-        sail_auto_pipeline_params["pipeline_params_grid"] = [
-            flatten_list(grid) for grid in param_parser(configs["parameter_grid"])
-        ]
+        if isinstance(configs["parameter_grid"], list):
+            sail_auto_pipeline_params["pipeline_params_grid"] = [
+                flatten_list(grid) for grid in param_parser(configs["parameter_grid"])
+            ]
+        else:
+            sail_auto_pipeline_params["pipeline_params_grid"] = flatten_list(
+                param_parser(configs["parameter_grid"])[0]
+            )
 
         sail_auto_pipeline_params["search_method"] = configs["search_method"]
         sail_auto_pipeline_params["search_method_params"] = flatten_list(
@@ -69,7 +73,7 @@ class ForecastingService(BaseService):
         if configs["tensorboard_log_dir"]:
             sail_auto_pipeline_params["tensorboard_log_dir"] = self.exp_dir
 
-        sail_auto_pipeline_params["tracer"] = self.tracer
+        sail_auto_pipeline_params["tracer"] = tracer
 
         return SAILAutoPipeline(**sail_auto_pipeline_params)
 

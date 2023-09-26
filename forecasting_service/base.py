@@ -7,7 +7,7 @@ from sail.telemetry import DummySpan
 from more_utils.logging import configure_logger
 from more_utils.time_series import TimeseriesFactory
 from ray.tune.utils.util import SafeFallbackEncoder
-
+from sail.telemetry import TracingClient
 from forecasting_service.data_stream import DataStreamFactory
 
 LOGGER = configure_logger(logger_name="ForecastingService", package_name=None)
@@ -25,12 +25,11 @@ class MessageHandler:
 
 
 class BaseService:
-    def __init__(self, name, modelardb_conn, message_broker, data_dir, tracer):
+    def __init__(self, name, modelardb_conn, message_broker, data_dir):
         self.name = name
         self.modelardb_conn = modelardb_conn
         self.message_broker = message_broker
         self.data_dir = data_dir
-        self.tracer = tracer
 
         self.client = message_broker.client()
         self.consumer = self.client.get_consumer()
@@ -76,12 +75,12 @@ class BaseService:
 
         return True
 
-    def trace(self, span_name, current_span=False, *args, **kwargs):
-        if self.tracer is not None:
+    def trace(self, tracer, span_name, current_span=False, *args, **kwargs):
+        if tracer is not None:
             if current_span:
-                return self.tracer.trace_as_current_span(span_name, *args, **kwargs)
+                return tracer.trace_as_current_span(span_name, *args, **kwargs)
             else:
-                return self.tracer.trace(span_name, *args, **kwargs)
+                return tracer.trace(span_name, *args, **kwargs)
         else:
             return DummySpan()
 
@@ -103,9 +102,24 @@ class BaseService:
             self.exp_dir, exp_name = self.create_experiment_directory(self.data_dir)
             LOGGER.info(f"Experiment directory created: {self.exp_dir}")
 
-            with self.trace(exp_name, current_span=True):
-                with self.trace("Pipeline-load"):
-                    model = self.load_or_create_model(run_configs["sail"])
+            tracer_configs = run_configs["sail"]["tracer"]
+            if tracer_configs:
+                tracer = TracingClient(
+                    service_name=os.environ.get("POD_NAME")
+                    if os.environ.get("POD_NAME")
+                    else tracer_configs["service_name"],
+                    otlp_endpoint=tracer_configs["oltp_endpoint"],
+                )
+                LOGGER.info(
+                    f"Telemetry service is enabled. Check traces at: {tracer_configs['web_interface']}, service name: {tracer.service_name}"
+                )
+            else:
+                LOGGER.info(f"Telemetry service is disabled.")
+                tracer = None
+
+            with self.trace(tracer, exp_name, current_span=True):
+                with self.trace(tracer, "Pipeline-load"):
+                    model = self.load_or_create_model(run_configs["sail"], tracer)
 
                 data_stream = DataStreamFactory.create_data_stream(
                     run_configs["data_stream"], self.ts_factory
@@ -115,7 +129,7 @@ class BaseService:
                     run_configs["sail"]["steps"][-1]["name"]
                 )
 
-                with self.trace("Pipeline-train", current_span=True):
+                with self.trace(tracer, "Pipeline-train", current_span=True):
                     predictions = {}
                     for ts_batch in data_session:
                         if data_stream.validate_batch(ts_batch):
@@ -131,11 +145,11 @@ class BaseService:
 
                 # save trained model instance
                 if run_configs["save_model_after_training"]:
-                    with self.trace("Pipeline-persist"):
+                    with self.trace(tracer, "Pipeline-persist"):
                         self.save_model_instance(model)
 
                 # publish predictions
-                with self.trace("Pipeline-publish"):
+                with self.trace(tracer, "Pipeline-publish"):
                     self.publish_predictions(predictions)
 
                 LOGGER.info(
