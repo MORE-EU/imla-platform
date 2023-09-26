@@ -91,7 +91,7 @@ class ForecastingService(BaseService):
         if model.best_pipeline:
             preds = model.predict(X)
             for index, pred in zip(indexes, preds):
-                predictions[str(index)] = pred
+                predictions[str(index)] = str(pred)
 
         model.train(X, y, **fit_params)
 
