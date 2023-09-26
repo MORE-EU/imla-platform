@@ -21,7 +21,7 @@ spec:
       containers:
       - name: forecasting-container
         image: dhavalsalwala/forecasting-service:0.8.1
-        # imagePullPolicy: IfNotPresent
+        imagePullPolicy: IfNotPresent
         args: ["--data_dir", "/data"]
         resources: {}
         volumeMounts:
