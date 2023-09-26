@@ -83,7 +83,13 @@ class LocalDataStream(DataStream):
                 nrows=self.data_configs["data_limit"],
                 chunksize=self.data_configs["data_batch_size"],
             )
-            features = list(time_series_df.columns)
+            # reading again a single row to get feature names
+            features = list(
+                pd.read_csv(
+                    file_path,
+                    nrows=1,
+                ).columns
+            )
         elif ".parquet" == extension.lower():
             parquet_file = ParquetFile(file_path)
             features = parquet_file.schema.names
