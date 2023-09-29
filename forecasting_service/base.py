@@ -2,13 +2,15 @@ import json
 import os
 import time
 from datetime import datetime
+
 import ray
-from sail.telemetry import DummySpan
 from more_utils.logging import configure_logger
 from more_utils.time_series import TimeseriesFactory
 from ray.tune.utils.util import SafeFallbackEncoder
-from sail.telemetry import TracingClient
+from sail.telemetry import DummySpan, TracingClient
+
 from forecasting_service.data_stream import DataStreamFactory
+from forecasting_service.validation import validate_address
 
 LOGGER = configure_logger(logger_name="ForecastingService", package_name=None)
 
@@ -102,20 +104,27 @@ class BaseService:
             self.exp_dir, exp_name = self.create_experiment_directory(self.data_dir)
             LOGGER.info(f"Experiment directory created: {self.exp_dir}")
 
+            tracer = None
             tracer_configs = run_configs["sail"]["tracer"]
             if tracer_configs:
-                tracer = TracingClient(
-                    service_name=os.environ.get("POD_NAME")
-                    if os.environ.get("POD_NAME")
-                    else tracer_configs["service_name"],
-                    otlp_endpoint=tracer_configs["oltp_endpoint"],
-                )
-                LOGGER.info(
-                    f"Telemetry service is enabled. Check traces at: {tracer_configs['web_interface']}, service name: {tracer.service_name}"
-                )
+                if validate_address(
+                    tracer_configs["oltp_endpoint"], throw_exception=False
+                ):
+                    tracer = TracingClient(
+                        service_name=os.environ.get("POD_NAME")
+                        if os.environ.get("POD_NAME")
+                        else tracer_configs["service_name"],
+                        otlp_endpoint=tracer_configs["oltp_endpoint"],
+                    )
+                    LOGGER.info(
+                        f"Telemetry service is enabled. Check traces at: {tracer_configs['web_interface']}, service name: {tracer.service_name}"
+                    )
+                else:
+                    LOGGER.error(
+                        f"Telemetry service at {tracer_configs['oltp_endpoint']} is unreachable."
+                    )
             else:
                 LOGGER.info(f"Telemetry service is disabled.")
-                tracer = None
 
             with self.trace(tracer, exp_name, current_span=True):
                 with self.trace(tracer, "Pipeline-load"):

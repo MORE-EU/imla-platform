@@ -109,9 +109,4 @@ class ForecastingService(BaseService):
 
     def run(self):
         super(ForecastingService, self).run()
-        # self.risk_msg_thread = threading.Thread(
-        #     target=self.run_forever, args=(,)
-        # )
-        # self.risk_msg_thread.start()
-        # self.risk_msg_thread.join()
         self.run_forever(self.process_time_series)
