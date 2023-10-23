@@ -106,18 +106,21 @@ class BaseService:
 
             tracer = None
             tracer_configs = run_configs["sail"]["tracer"]
+            service_name = (
+                os.environ.get("POD_NAME")
+                if os.environ.get("POD_NAME")
+                else tracer_configs["service_name"]
+            )
             if tracer_configs:
                 if validate_address(
                     tracer_configs["oltp_endpoint"], throw_exception=False
                 ):
                     tracer = TracingClient(
-                        service_name=os.environ.get("POD_NAME")
-                        if os.environ.get("POD_NAME")
-                        else tracer_configs["service_name"],
+                        service_name=service_name,
                         otlp_endpoint=tracer_configs["oltp_endpoint"],
                     )
                     LOGGER.info(
-                        f"Telemetry service is enabled. Check traces at: {tracer_configs['web_interface']}, service name: {tracer.service_name}"
+                        f"Telemetry service is enabled. Check traces at: {tracer_configs['web_interface']}&service={service_name}"
                     )
                 else:
                     LOGGER.error(

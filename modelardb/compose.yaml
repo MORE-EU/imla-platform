@@ -17,7 +17,7 @@ version: "3.8"
 services:
   modelardbd:
     hostname: modelardbd
-    image: dhavalsalwala/modelardb-rs:latest
+    image: dhavalsalwala/modelardb-rs:17Oct23
     container_name: modelardbd
     ports:
       - "9999:9999"
@@ -29,6 +29,7 @@ services:
       AWS_ALLOW_HTTP: true
     volumes:
       - ./modelardb_data:/data
+    command: ["target/release/modelardbd", "edge", "/data"]
 
 networks:
   default:
