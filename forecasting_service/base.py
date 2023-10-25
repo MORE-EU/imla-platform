@@ -33,11 +33,14 @@ class BaseService:
         self.message_broker = message_broker
         self.data_dir = data_dir
 
-        self.client = message_broker.client()
-        self.consumer = self.client.get_consumer()
-        self.publisher = self.client.get_publisher()
-
         self.ts_factory = TimeseriesFactory(source_db_conn=modelardb_conn)
+
+    def create_client(self):
+        self.client = self.message_broker.client()
+
+    @property
+    def consumer(self):
+        return self.message_broker.client().get_consumer()
 
     def create_experiment_directory(self, data_dir):
         exp_name = "ForecastingTask" + "_" + time.strftime("%d-%m-%Y_%H:%M:%S")
@@ -53,7 +56,7 @@ class BaseService:
         )
 
     def send_job_ack(self):
-        self.publisher.publish(
+        self.client.get_publisher().publish(
             json.dumps({"STATUS": "ACCEPTED", "timestamp": datetime.now()}, default=str)
         )
 
@@ -91,8 +94,11 @@ class BaseService:
         try:
             mh = MessageHandler()
 
+            # create client to consume message
+            self.create_client()
+
             # Receive one task at a time from Message Broker
-            self.consumer.receive(mh.handler, max_messages=1, timeout=None)
+            self.client.get_consumer().receive(mh.handler, max_messages=1, timeout=None)
 
             # Send acknowlegment for the incoming task
             self.send_job_ack()
@@ -178,6 +184,7 @@ class BaseService:
             LOGGER.exception(e)
         finally:
             ray.shutdown()
+            self.client.close()
 
     def run_forever(self, method, **kwargs):
         while True:
