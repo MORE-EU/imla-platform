@@ -38,10 +38,6 @@ class BaseService:
     def create_client(self):
         self.client = self.message_broker.client()
 
-    @property
-    def consumer(self):
-        return self.message_broker.client().get_consumer()
-
     def create_experiment_directory(self, data_dir):
         exp_name = "ForecastingTask" + "_" + time.strftime("%d-%m-%Y_%H:%M:%S")
         exp_dir = os.path.join(data_dir, exp_name)
@@ -126,7 +122,7 @@ class BaseService:
                         otlp_endpoint=tracer_configs["oltp_endpoint"],
                     )
                     LOGGER.info(
-                        f"Telemetry service is enabled. Check traces at: {tracer_configs['web_interface']}&service={service_name}"
+                        f"Telemetry service is enabled. Check traces at: {tracer_configs['web_interface']}/search&service={service_name}"
                     )
                 else:
                     LOGGER.error(
@@ -184,7 +180,7 @@ class BaseService:
             LOGGER.exception(e)
         finally:
             ray.shutdown()
-            self.client.close()
+            self.client.stop()
 
     def run_forever(self, method, **kwargs):
         while True:
