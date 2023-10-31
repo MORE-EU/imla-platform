@@ -45,13 +45,16 @@ def read_parquet_file_or_folder(path):
         safe_name = field.name.replace(" ", "_")
         column_names.append(safe_name)
 
-        # Ensure all fields are float32 as float64 are not supported.
-        if field.type == pyarrow.float64():
+        if field.type == pyarrow.float16() or field.type == pyarrow.float64():
+            # Ensure fields are float32 as others are not supported.
             columns.append((safe_name, pyarrow.float32()))
-        elif field.type == pyarrow.int64():
-            columns.append((safe_name, pyarrow.float32()))
-        elif field.type == pyarrow.timestamp("us"):
-            columns.append((field.name, pyarrow.timestamp("ms")))
+        elif field.type in [
+            pyarrow.timestamp("s"),
+            pyarrow.timestamp("us"),
+            pyarrow.timestamp("ns"),
+        ]:
+            # Ensure timestamps are timestamp[ms] as others are not supported.
+            columns.append((safe_name, pyarrow.timestamp("ms")))
         else:
             columns.append((safe_name, field.type))
 
@@ -83,7 +86,7 @@ def export_to_cos(flight_client):
 
 # Main Function.
 if __name__ == "__main__":
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 5:
         print(
             f"usage: {sys.argv[0]} host_address table parquet_file_or_folder [error_bound] flush_mode[local, cos]"
         )
