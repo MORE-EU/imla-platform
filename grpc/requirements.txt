@@ -1,0 +1,4 @@
+python-decouple
+pyyaml
+grpcio==1.51.3
+git+https://github.com/IBM/more-utils.git
