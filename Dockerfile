@@ -1,7 +1,7 @@
 FROM --platform=linux/amd64 python:3.10
 
 LABEL maintainer="IBM Research Europe - Ireland" \
-    name="SAIL Docker Service" \
+    name="IBM Forecasting Service" \
     summary="Docker-based container service for SAIL library" \
     vendor="IBM Corp."
 
