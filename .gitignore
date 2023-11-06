@@ -170,3 +170,6 @@ modelardb/modelardb_data
 
 # env file
 .env
+
+# data folder
+data/
