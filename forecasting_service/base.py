@@ -51,9 +51,12 @@ class BaseService:
             + json.dumps(config, indent=2, cls=SafeFallbackEncoder)
         )
 
-    def send_job_ack(self):
+    def send_job_response(self, job_id, status, data=None):
+        message = {"job_id": job_id, "status": status, "timestamp": datetime.now()}
+        if data:
+            message = message | data
         self.client.get_publisher().publish(
-            json.dumps({"STATUS": "ACCEPTED", "timestamp": datetime.now()}, default=str)
+            json.dumps(message, default=str)
         )
 
     def publish_predictions(self, predictions):
@@ -96,24 +99,24 @@ class BaseService:
             # Receive one task at a time from Message Broker
             self.client.get_consumer().receive(mh.handler, max_messages=1, timeout=None)
 
-            # Send acknowlegment for the incoming task
-            self.send_job_ack()
-
             # get message from handler
             run_configs = mh.get_message()
             self.log_config(run_configs["data_stream"])
+
+            # Send acknowlegment for the incoming task
+            self.send_job_response(job_id=run_configs["job_id"], status="ACCEPTED")
 
             self.exp_dir, exp_name = self.create_experiment_directory(self.data_dir)
             LOGGER.info(f"Experiment directory created: {self.exp_dir}")
 
             tracer = None
             tracer_configs = run_configs["sail"]["tracer"]
-            service_name = (
-                os.environ.get("POD_NAME")
-                if os.environ.get("POD_NAME")
-                else tracer_configs["service_name"]
-            )
             if tracer_configs:
+                service_name = (
+                    os.environ.get("POD_NAME")
+                    if os.environ.get("POD_NAME")
+                    else tracer_configs["service_name"]
+                )
                 if validate_address(
                     tracer_configs["oltp_endpoint"], throw_exception=False
                 ):
@@ -165,6 +168,8 @@ class BaseService:
                 # publish predictions
                 with self.trace(tracer, "Pipeline-publish"):
                     self.publish_predictions(predictions)
+                
+                self.send_job_response(job_id=run_configs["job_id"], status="COMPLETED", data={"response": {"output_file": "response.json", "experiment_name": exp_name}}) 
 
                 LOGGER.info(
                     f"Task finished successfully."
@@ -176,6 +181,7 @@ class BaseService:
                 )
 
         except Exception as e:
+            self.send_job_response(job_id=run_configs["job_id"], status="ERROR", data={"response": {"error": str(e)}})
             LOGGER.error(f"Error processing new request:")
             LOGGER.exception(e)
         finally:

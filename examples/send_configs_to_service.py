@@ -30,8 +30,13 @@ with rabbitmq_context.client() as client:
     publisher.publish(json.dumps(run_configs))
 
     receiver = client.get_consumer()
-    message = receiver.receive(handler=ServerMessageHandler().handler, max_messages=1, timeout=None)
-    message = message.decode("UTF-8")
-    message = json.loads(message)
-    print("Message Received: ", message)
 
+    print("Waiting for response...")
+    while True:
+        message = receiver.receive(handler=ServerMessageHandler().handler, max_messages=1, timeout=None)
+        message = message.decode("UTF-8")
+        message = json.loads(message)
+        print("Message Received: ", message)
+
+        if message["status"] in ["COMPLETED", "ERROR"]:
+            break

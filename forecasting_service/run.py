@@ -68,6 +68,8 @@ def run_service(data_dir):
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     parser = ArgumentParser()
     parser.add_argument(
         "--data_dir",
