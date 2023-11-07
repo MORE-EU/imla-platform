@@ -55,9 +55,7 @@ class BaseService:
         message = {"job_id": job_id, "status": status, "timestamp": datetime.now()}
         if data:
             message = message | data
-        self.client.get_publisher().publish(
-            json.dumps(message, default=str)
-        )
+        self.client.get_publisher().publish(json.dumps(message, default=str))
 
     def publish_predictions(self, predictions):
         response_msg = {"predictions": predictions}
@@ -168,8 +166,17 @@ class BaseService:
                 # publish predictions
                 with self.trace(tracer, "Pipeline-publish"):
                     self.publish_predictions(predictions)
-                
-                self.send_job_response(job_id=run_configs["job_id"], status="COMPLETED", data={"response": {"output_file": "response.json", "experiment_name": exp_name}}) 
+
+                self.send_job_response(
+                    job_id=run_configs["job_id"],
+                    status="COMPLETED",
+                    data={
+                        "response": {
+                            "output_file": "response.json",
+                            "experiment_name": exp_name,
+                        }
+                    },
+                )
 
                 LOGGER.info(
                     f"Task finished successfully."
@@ -181,7 +188,11 @@ class BaseService:
                 )
 
         except Exception as e:
-            self.send_job_response(job_id=run_configs["job_id"], status="ERROR", data={"response": {"error": str(e)}})
+            self.send_job_response(
+                job_id=run_configs["job_id"],
+                status="ERROR",
+                data={"response": {"error": str(e)}},
+            )
             LOGGER.error(f"Error processing new request:")
             LOGGER.exception(e)
         finally:
