@@ -1,14 +1,15 @@
-import numpy as np
-from grpc import StatusCode
 import json
+import os
+import threading
+from datetime import datetime
+
+import numpy as np
 import serving.forecasting_pb2 as forecasting_pb2
 import serving.forecasting_pb2_grpc as forecasting_pb2_grpc
-from more_utils.logging import configure_logger
-import json
-import threading
-import os
 import yaml
-from datetime import datetime
+from more_utils.logging import configure_logger
+
+from grpc import StatusCode
 
 LOGGER = configure_logger(logger_name="GRPC_Server", package_name=None)
 
@@ -182,21 +183,21 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
             }
             return predictions
 
-    def GetInference(self, request, context):
-      # get the timestamp from the request and convert it to a datetime object
-      date = datetime.fromtimestamp(request.timestamp / 1000) 
-      model_name = request.model_name
+    # def GetInference(self, request, context):
+    #   # get the timestamp from the request and convert it to a datetime object
+    #   date = datetime.fromtimestamp(request.timestamp / 1000)
+    #   model_name = request.model_name
 
-      # Convert date to dataframe and set it as the index
-      date = pd.DataFrame({'timestamp': [date]})
-      date['timestamp'] = pd.to_datetime(date['timestamp'])
-      date = date.set_index('timestamp')
-      
-      # get the predictions for the given timestamp and assign to Any type
-      y_pred = predict(request.timestamp, date, model_name)
+    #   # Convert date to dataframe and set it as the index
+    #   date = pd.DataFrame({'timestamp': [date]})
+    #   date['timestamp'] = pd.to_datetime(date['timestamp'])
+    #   date = date.set_index('timestamp')
 
-      if y_pred is None:
-        # return empty response if model not exist
-        context.abort(StatusCode.INVALID_ARGUMENT, "Model does not exist")
-      else:
-        return forecasting_pb2.Inference(predictions=y_pred)
+    #   # get the predictions for the given timestamp and assign to Any type
+    #   y_pred = predict(request.timestamp, date, model_name)
+
+    #   if y_pred is None:
+    #     # return empty response if model not exist
+    #     context.abort(StatusCode.INVALID_ARGUMENT, "Model does not exist")
+    #   else:
+    #     return forecasting_pb2.Inference(predictions=y_pred)
