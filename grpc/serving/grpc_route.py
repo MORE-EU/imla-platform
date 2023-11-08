@@ -78,6 +78,9 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
             # append parameters
             run_configs["job_id"] = request.id
             run_configs["data_stream"]["target"] = target
+            run_configs["data_stream"]["time_interval"] = configs["time_interval"]
+            run_configs["data_stream"]["from_date"] = str(datetime.fromtimestamp(configs["startDate"] / 1000))
+            run_configs["data_stream"]["to_date"] = str(datetime.fromtimestamp(configs["endDate"] / 1000))
 
             with self.rabbitmq_context.client() as client:
                 publisher = client.get_publisher()

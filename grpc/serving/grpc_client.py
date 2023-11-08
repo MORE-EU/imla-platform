@@ -15,9 +15,9 @@ def start_training(stub):
                 "id": "1345667",
                 "config": json.dumps(
                     {
-                        "startDate": 1357678740000,
-                        "endDate": 1389816000000,
-                        "time_interval": "15m",
+                        "startDate": 1536451202000,
+                        "endDate": 1536471200000,
+                        "time_interval": "2S",
                         "targetColumn": ["active_power"],
                         "experiment": "WIND_POWER_ESTIMATION",
                     }
@@ -66,7 +66,7 @@ def get_all_results(stub):
 def get_inference(stub):
     response = stub.GetInference(
         ParseDict(
-            {"timestamp": 1345667, "model_name": "AdaptiveRandomForestClassifier"},
+            {"timestamp": 1345667, "model_name": "SAILModel"},
             forecasting_pb2.Timestamp(),
         )
     )

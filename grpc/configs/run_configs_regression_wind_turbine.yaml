@@ -1,4 +1,6 @@
 ---
+job_id: test1
+
 sail:
 
   model_path: null
@@ -135,23 +137,24 @@ sail:
 
   pipeline_strategy: DetectAndIncrement
   verbosity_level: 1
-  verbosity_interval: 4 # default is null
+  verbosity_interval: 1 # default is null
   tensorboard_log_dir: /data
-  tracer:
-    service_name: ForecastingService
-    oltp_endpoint: http://83.212.75.52:31318
-    web_interface: http://master.more2020.eu/:31686
+  tracer: null
+    # service_name: ForecastingService
+    # oltp_endpoint: http://83.212.75.52:31318
+    # web_interface: http://master.more2020.eu/:31686
 
 data_stream:
-  source: local_file # modelardb or local_file
-  model_table_or_path: /datasets/wind_turbine.parquet # set path to a file for local_file
+  source: modelardb # modelardb or local_file
+  model_table_or_path: wind_turbine # set path to a file for local_file
   target: active_power
   timestamp_col: datetime 
+  time_interval: null # null means default granularity
   selected_features: null # empty means use all features
   classes: [] # only applicable for classification problem and when incremental_training is enabled
   from_date: null
   to_date: null
-  data_limit: 1000 # put null for all data
+  data_limit: null # put null for all data
   data_batch_size: 250
   data_ingestion_freq: 0 #ingestion frequency in sec
 
