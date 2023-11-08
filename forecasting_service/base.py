@@ -102,7 +102,11 @@ class BaseService:
             self.log_config(run_configs["data_stream"])
 
             # Send acknowlegment for the incoming task
-            self.send_job_response(job_id=run_configs["job_id"], status="ACCEPTED")
+            self.send_job_response(
+                job_id=run_configs["job_id"],
+                status="ACCEPTED",
+                data={"target": run_configs["data_stream"]["target"]},
+            )
 
             self.exp_dir, exp_name = self.create_experiment_directory(self.data_dir)
             LOGGER.info(f"Experiment directory created: {self.exp_dir}")
@@ -171,10 +175,11 @@ class BaseService:
                     job_id=run_configs["job_id"],
                     status="COMPLETED",
                     data={
+                        "target": run_configs["data_stream"]["target"],
                         "response": {
                             "output_file": "response.json",
                             "experiment_name": exp_name,
-                        }
+                        },
                     },
                 )
 
@@ -191,7 +196,10 @@ class BaseService:
             self.send_job_response(
                 job_id=run_configs["job_id"],
                 status="ERROR",
-                data={"response": {"error": str(e)}},
+                data={
+                    "target": run_configs["data_stream"]["target"],
+                    "response": {"error": str(e)},
+                },
             )
             LOGGER.error(f"Error processing new request:")
             LOGGER.exception(e)
