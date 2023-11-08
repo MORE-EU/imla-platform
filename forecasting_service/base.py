@@ -14,6 +14,10 @@ from forecasting_service.validation import validate_address
 
 LOGGER = configure_logger(logger_name="ForecastingService", package_name=None)
 
+SERVICE_NAME = (
+    os.environ.get("POD_NAME") if os.environ.get("POD_NAME") else "ForecastingService"
+)
+
 
 class MessageHandler:
     def __init__(self):
@@ -51,10 +55,16 @@ class BaseService:
             + json.dumps(config, indent=2, cls=SafeFallbackEncoder)
         )
 
-    def send_job_response(self, job_id, status, data=None):
-        message = {"job_id": job_id, "status": status, "timestamp": datetime.now()}
-        if data:
-            message = message | data
+    def send_job_response(self, job_id, status, target, response):
+        message = {
+            "job_id": job_id,
+            "status": status,
+            "timestamp": datetime.now(),
+            "service": SERVICE_NAME,
+            "experiment": self.exp_name,
+            "target": target,
+            "response": response,
+        }
         self.client.get_publisher().publish(json.dumps(message, default=str))
 
     def publish_predictions(self, predictions):
@@ -101,33 +111,31 @@ class BaseService:
             run_configs = mh.get_message()
             self.log_config(run_configs["data_stream"])
 
+            self.exp_dir, self.exp_name = self.create_experiment_directory(
+                self.data_dir
+            )
+            LOGGER.info(f"Experiment directory created: {self.exp_dir}")
+
             # Send acknowlegment for the incoming task
             self.send_job_response(
                 job_id=run_configs["job_id"],
                 status="ACCEPTED",
-                data={"target": run_configs["data_stream"]["target"]},
+                target=run_configs["data_stream"]["target"],
+                response="Task Accepted by Forecasting Service.",
             )
-
-            self.exp_dir, exp_name = self.create_experiment_directory(self.data_dir)
-            LOGGER.info(f"Experiment directory created: {self.exp_dir}")
 
             tracer = None
             tracer_configs = run_configs["sail"]["tracer"]
             if tracer_configs:
-                service_name = (
-                    os.environ.get("POD_NAME")
-                    if os.environ.get("POD_NAME")
-                    else tracer_configs["service_name"]
-                )
                 if validate_address(
                     tracer_configs["oltp_endpoint"], throw_exception=False
                 ):
                     tracer = TracingClient(
-                        service_name=service_name,
+                        service_name=SERVICE_NAME,
                         otlp_endpoint=tracer_configs["oltp_endpoint"],
                     )
                     LOGGER.info(
-                        f"Telemetry service is enabled. Check traces at: {tracer_configs['web_interface']}/search&service={service_name}"
+                        f"Telemetry service is enabled. Check traces at: {tracer_configs['web_interface']}/search&service={SERVICE_NAME}"
                     )
                 else:
                     LOGGER.error(
@@ -136,7 +144,7 @@ class BaseService:
             else:
                 LOGGER.info(f"Telemetry service is disabled.")
 
-            with self.trace(tracer, exp_name, current_span=True):
+            with self.trace(tracer, self.exp_name, current_span=True):
                 with self.trace(tracer, "Pipeline-load"):
                     model = self.load_or_create_model(run_configs["sail"], tracer)
 
@@ -147,7 +155,7 @@ class BaseService:
                 target, timestamp_col, fit_params = data_stream.get_training_params(
                     run_configs["sail"]["steps"][-1]["name"]
                 )
-                
+
                 with self.trace(tracer, "Pipeline-train", current_span=True):
                     predictions = {}
                     for ts_batch in data_session:
@@ -175,13 +183,8 @@ class BaseService:
                 self.send_job_response(
                     job_id=run_configs["job_id"],
                     status="COMPLETED",
-                    data={
-                        "target": run_configs["data_stream"]["target"],
-                        "response": {
-                            "output_file": "response.json",
-                            "experiment_name": exp_name,
-                        },
-                    },
+                    target=run_configs["data_stream"]["target"],
+                    response="Task finished successfully.",
                 )
 
                 LOGGER.info(
@@ -197,10 +200,8 @@ class BaseService:
             self.send_job_response(
                 job_id=run_configs["job_id"],
                 status="ERROR",
-                data={
-                    "target": run_configs["data_stream"]["target"],
-                    "response": {"error": str(e)},
-                },
+                target=run_configs["data_stream"]["target"],
+                response=str(e),
             )
             LOGGER.error(f"Error processing new request:")
             LOGGER.exception(e)

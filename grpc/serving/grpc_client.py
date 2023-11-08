@@ -16,7 +16,7 @@ def start_training(stub):
                 "config": json.dumps(
                     {
                         "startDate": 1536451202000,
-                        "endDate": 1536471200000,
+                        "endDate": 1536453200000,
                         "time_interval": "2S",
                         "targetColumn": ["active_power"],
                         "experiment": "WIND_POWER_ESTIMATION",
@@ -78,7 +78,7 @@ def run(service):
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
     # used in circumstances in which the with statement does not fit the needs
     # of the code.
-    with grpc.insecure_channel("localhost:50051") as channel:
+    with grpc.insecure_channel("83.212.75.52:31051") as channel:
         stub = forecasting_pb2_grpc.RouteGuideStub(channel)
 
         if service == "training":

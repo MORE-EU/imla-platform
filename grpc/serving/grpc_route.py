@@ -56,8 +56,9 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
                         if "COMPLETED" == message["status"]:
                             target_data["status"] = "done"
                         target_data["timestamp"] = message["timestamp"]
-                        if "response" in message:
-                            target_data["response"] = message["response"]
+                        target_data["service"] = message["service"]
+                        target_data["experiment"] = message["experiment"]
+                        target_data["response"] = message["response"]
                     else:
                         LOGGER.error(f"Invalid Job Id received. Message: {message}")
 
@@ -79,8 +80,12 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
             run_configs["job_id"] = request.id
             run_configs["data_stream"]["target"] = target
             run_configs["data_stream"]["time_interval"] = configs["time_interval"]
-            run_configs["data_stream"]["from_date"] = str(datetime.fromtimestamp(configs["startDate"] / 1000))
-            run_configs["data_stream"]["to_date"] = str(datetime.fromtimestamp(configs["endDate"] / 1000))
+            run_configs["data_stream"]["from_date"] = str(
+                datetime.fromtimestamp(configs["startDate"] / 1000)
+            )
+            run_configs["data_stream"]["to_date"] = str(
+                datetime.fromtimestamp(configs["endDate"] / 1000)
+            )
 
             with self.rabbitmq_context.client() as client:
                 publisher = client.get_publisher()
@@ -125,10 +130,7 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
                     data = {}
                     # assign the prediction results for each model
                     data["SAILModel"] = forecasting_pb2.Predictions(
-                        predictions=self.get_predictions(
-                            target_data["response"]["experiment_name"],
-                            target_data["response"]["output_file"],
-                        ),
+                        predictions=self.get_predictions(target_data),
                         evaluation={"MSE": 345.457},
                     )
 
@@ -160,10 +162,7 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
 
                 if target_data["status"] == "done":
                     data[target]["SAILModel"] = forecasting_pb2.Predictions(
-                        predictions=self.get_predictions(
-                            target_data["response"]["experiment_name"],
-                            target_data["response"]["output_file"],
-                        ),
+                        predictions=self.get_predictions(target_data),
                         evaluation={"MSE": 345.457},
                     )
 
@@ -176,9 +175,13 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
             # return empty response
             context.abort(StatusCode.INVALID_ARGUMENT, "Not a valid job id")
 
-    def get_predictions(self, experiment_name, output_file):
-        experiment_name = "ForecastingTask_26-10-2023_15:18:50_64C"
-        with open(os.path.join(self.data_dir, experiment_name, output_file)) as output:
+    def get_predictions(self, target_data):
+        service = target_data["service"]
+        experiment_name = target_data["experiment"]
+
+        with open(
+            os.path.join(self.data_dir, service, experiment_name, "response.json")
+        ) as output:
             response = json.load(output)
             predictions = {
                 timestamp: float(value)
