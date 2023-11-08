@@ -2,7 +2,7 @@ FROM --platform=linux/amd64 python:3.10
 
 LABEL maintainer="IBM Research Europe - Ireland" \
     name="IBM Forecasting GRPC Server" \
-    summary="Docker-based container service for SAIL library" \
+    summary="GRPC Server for MORE Forecasting tools" \
     vendor="IBM Corp."
 
 ENV PYTHONPATH="${PYTHONPATH}:/service"

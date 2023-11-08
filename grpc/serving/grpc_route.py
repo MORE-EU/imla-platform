@@ -1,34 +1,202 @@
 import numpy as np
 from grpc import StatusCode
-
+import json
 import serving.forecasting_pb2 as forecasting_pb2
 import serving.forecasting_pb2_grpc as forecasting_pb2_grpc
-from serving.send_config import send_training_task
+from more_utils.logging import configure_logger
+import json
+import threading
+import os
+import yaml
+from datetime import datetime
+
+LOGGER = configure_logger(logger_name="GRPC_Server", package_name=None)
+
+EXPERIMENT_TO_CONFIG_FILE = {
+    "WIND_POWER_ESTIMATION": "configs/run_configs_regression_wind_turbine.yaml"
+}
+
+# Define a shared variable to hold the object returned from the background task
+shared_lock = threading.Lock()
+
+
+class ServerMessageHandler:
+    def __init__(self):
+        self.message = None
+
+    def handler(self, message):
+        self.message = json.loads(message)
+
 
 class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
-    def GetInference(self, request, context):
-        # get the timestamp from the request and convert it to a datetime object
-        # date = datetime.fromtimestamp(request.timestamp / 1000)
-        model_name = request.model_name
-        print("model_name: ", model_name)
+    def __init__(self, rabbitmq_context, data_dir):
+        self.jobs = {}
+        self.rabbitmq_context = rabbitmq_context
+        self.data_dir = data_dir
 
-        # Convert date to dataframe and set it as the index
-        # date = pd.DataFrame({"timestamp": [date]})
-        # date["timestamp"] = pd.to_datetime(date["timestamp"])
-        # date = date.set_index("timestamp")
+    def process_reponse(self):
+        with self.rabbitmq_context.client() as client:
+            receiver = client.get_consumer()
+            while True:
+                message = receiver.receive(
+                    handler=ServerMessageHandler().handler, max_messages=1, timeout=None
+                )
+                message = message.decode("UTF-8")
+                message = json.loads(message)
 
-        # get the predictions for the given timestamp and assign to Any type
-        # y_pred = predict(request.timestamp, date, model_name)
+                with shared_lock:
+                    job_id = message["job_id"]
+                    if job_id in self.jobs:
+                        target = message["target"]
+                        LOGGER.info(
+                            f"Message Received: {message} for job_id: {job_id} and target: {target}"
+                        )
+                        target_data = self.jobs[job_id][target]
+                        if "COMPLETED" == message["status"]:
+                            target_data["status"] = "done"
+                        target_data["timestamp"] = message["timestamp"]
+                        if "response" in message:
+                            target_data["response"] = message["response"]
+                    else:
+                        LOGGER.error(f"Invalid Job Id received. Message: {message}")
 
-        send_training_task("run_configs_regression_wind_turbine.yaml")
+    def StartTraining(self, request, context):
+        LOGGER.info(f"[StartTraining] - Request received with job id:{request.id}.")
 
-        predictions = {}
-        values = np.linspace(0, 1, 100, dtype=float)
-        for index, value in enumerate(values):
-            predictions[str(index)] = value
+        # Read the config from the request
+        configs = json.loads(request.config)
 
-        if None:
-            # return empty response if model not exist
-            context.abort(StatusCode.INVALID_ARGUMENT, "Model does not exist")
+        # for each target column, create a status with waiting
+        self.jobs[request.id] = {}
+        for target in configs["targetColumn"]:
+            self.jobs[request.id] = {target: {"status": "waiting"}}
+
+            with open(EXPERIMENT_TO_CONFIG_FILE[configs["experiment"]]) as fp:
+                run_configs = yaml.safe_load(fp)
+
+            # append parameters
+            run_configs["job_id"] = request.id
+            run_configs["data_stream"]["target"] = target
+
+            with self.rabbitmq_context.client() as client:
+                publisher = client.get_publisher()
+                publisher.publish(json.dumps(run_configs))
+
+            self.jobs[request.id][target]["status"] = "processing"
+
+        return forecasting_pb2.Status(id=request.id, status="started")
+
+    def GetProgress(self, request, context):
+        """
+        Get progress for a specific job
+        Return: The job id and the status of each target column
+        """
+        job_id = request.id
+
+        if job_id in self.jobs:
+            # Create a Struct message
+            data = {}
+
+            # Add the status of each target column to the struct
+            for target, target_data in self.jobs[job_id].items():
+                data[target] = target_data["status"]
+
+            return forecasting_pb2.Progress(id=job_id, data=data)
         else:
-            return forecasting_pb2.Inference(predictions=predictions)
+            # return empty response
+            context.abort(StatusCode.INVALID_ARGUMENT, "Not a valid job id")
+
+    def GetSpecificTargetResults(self, request, context):
+        """
+        Get the results for a specific target column
+        Return: The predictions and evaluation metrics for each model
+        """
+        target = request.name
+        job_id = request.id
+
+        if job_id in self.jobs:
+            if target in self.jobs[job_id]:
+                target_data = self.jobs[job_id][target]
+                if target_data["status"] == "done":
+                    data = {}
+                    # assign the prediction results for each model
+                    data["SAILModel"] = forecasting_pb2.Predictions(
+                        predictions=self.get_predictions(
+                            target_data["response"]["experiment_name"],
+                            target_data["response"]["output_file"],
+                        ),
+                        evaluation={"MSE": 345.457},
+                    )
+
+                    return forecasting_pb2.Results(target=target, metrics=data)
+                else:
+                    # return empty response
+                    context.abort(
+                        StatusCode.INVALID_ARGUMENT, "Task has not finished yet"
+                    )
+        else:
+            # return empty response
+            context.abort(
+                StatusCode.INVALID_ARGUMENT, "Not a valid job id or target column"
+            )
+
+    def GetAllTargetsResults(self, request, context):
+        """
+        Get the results for all target columns
+        Return: The predictions and evaluation metrics for each model for each target column
+        """
+        job_id = request.id
+        # create an empty response - array of dictionaries where each dictionary is a target column
+        all_results = forecasting_pb2.AllResults()
+
+        if job_id in self.jobs:
+            data = {}
+            for target, target_data in self.jobs[job_id].items():
+                data[target] = {}
+
+                if target_data["status"] == "done":
+                    data[target]["SAILModel"] = forecasting_pb2.Predictions(
+                        predictions=self.get_predictions(
+                            target_data["response"]["experiment_name"],
+                            target_data["response"]["output_file"],
+                        ),
+                        evaluation={"MSE": 345.457},
+                    )
+
+                # add the target column and its results to the response
+                all_results.results.append(
+                    forecasting_pb2.Results(target=target, metrics=data[target])
+                )
+            return all_results
+        else:
+            # return empty response
+            context.abort(StatusCode.INVALID_ARGUMENT, "Not a valid job id")
+
+    def get_predictions(self, experiment_name, output_file):
+        experiment_name = "ForecastingTask_26-10-2023_15:18:50_64C"
+        with open(os.path.join(self.data_dir, experiment_name, output_file)) as output:
+            response = json.load(output)
+            predictions = {
+                timestamp: float(value)
+                for timestamp, value in response["predictions"].items()
+            }
+            return predictions
+
+    def GetInference(self, request, context):
+      # get the timestamp from the request and convert it to a datetime object
+      date = datetime.fromtimestamp(request.timestamp / 1000) 
+      model_name = request.model_name
+
+      # Convert date to dataframe and set it as the index
+      date = pd.DataFrame({'timestamp': [date]})
+      date['timestamp'] = pd.to_datetime(date['timestamp'])
+      date = date.set_index('timestamp')
+      
+      # get the predictions for the given timestamp and assign to Any type
+      y_pred = predict(request.timestamp, date, model_name)
+
+      if y_pred is None:
+        # return empty response if model not exist
+        context.abort(StatusCode.INVALID_ARGUMENT, "Model does not exist")
+      else:
+        return forecasting_pb2.Inference(predictions=y_pred)

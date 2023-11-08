@@ -1,10 +1,10 @@
 ---
 version: "3.8"
 services:
-  forecasting-grpc-server:
+  grpc-server:
     image: dhavalsalwala/forecasting-grpc-server:latest
-    hostname: forecasting-grpc-server
-    container_name: forecasting
+    hostname: grpc-server
+    container_name: grpc
     network_mode: host
     build:
       context: "."
@@ -19,11 +19,13 @@ services:
       RABBITMQ_PASS: ${RABBITMQ_PASS}
       RABBITMQ_HOST: ${RABBITMQ_HOST}
       RABBITMQ_PORT: ${RABBITMQ_PORT}
-      RABBITMQ_CONSUMER_QUEUE: ${RABBITMQ_CONSUMER_QUEUE}
-      RABBITMQ_PRODUCER_QUEUE: ${RABBITMQ_PRODUCER_QUEUE}
+      RABBITMQ_GRPC_CONSUMER_QUEUE: ${RABBITMQ_GRPC_CONSUMER_QUEUE}
+      RABBITMQ_GRPC_PRODUCER_QUEUE: ${RABBITMQ_GRPC_PRODUCER_QUEUE}
       GRPC_HOST: ${GRPC_HOST}
       GRPC_PORT: ${GRPC_PORT}
-    entrypoint: ["python", "serving/grpc_server.py"]
+    entrypoint: ["python", "serving/grpc_server.py", "--data_dir", "/data"]
+    volumes:
+      - /home/dhaval/dev/forecasting-service/data:/data
 
 # networks:
 #   default:
