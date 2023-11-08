@@ -84,18 +84,20 @@ def run(service):
         if service == "training":
             print("-------------- StartTraining --------------")
             start_training(stub)
-        if service == "progress":
+        elif service == "progress":
             print("-------------- GetProgress --------------")
             get_progress(stub)
-        if service == "specific_results":
+        elif service == "specific_results":
             print("-------------- GetSpecificTargetResults --------------")
             get_all_results(stub)
-        if service == "all_results":
+        elif service == "all_results":
             print("-------------- GetAllTargetsResults --------------")
             get_all_results(stub)
-        if service == "inference":
-            print("-------------- GetInference --------------")
-            get_inference(stub)
+        # elif service == "inference":
+        #     print("-------------- GetInference --------------")
+        #     get_inference(stub)
+        else:
+            print("-------------- Error: Invalid service name. --------------")
 
 
 if __name__ == "__main__":
