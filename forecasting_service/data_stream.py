@@ -39,6 +39,18 @@ class DataStream:
 
         return True
 
+    def apply_granularity(self, df):
+        if self.data_configs["time_interval"]:
+            df_granularity = (
+                df.set_index(self.data_configs["timestamp_col"])
+                .resample(self.data_configs["time_interval"])
+                .mean()
+            )
+            df = df_granularity.reset_index().rename(
+                columns={"index": self.data_configs["timestamp_col"]}
+            )
+        return df
+    
     def wait(self):
         sleep(self.data_configs["data_ingestion_freq"])
 

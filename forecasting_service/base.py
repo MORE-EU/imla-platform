@@ -147,11 +147,12 @@ class BaseService:
                 target, timestamp_col, fit_params = data_stream.get_training_params(
                     run_configs["sail"]["steps"][-1]["name"]
                 )
-
+                
                 with self.trace(tracer, "Pipeline-train", current_span=True):
                     predictions = {}
                     for ts_batch in data_session:
                         if data_stream.validate_batch(ts_batch):
+                            ts_batch = data_stream.apply_granularity(ts_batch)
                             prediction = self.process_ts_batch(
                                 model,
                                 ts_batch,
