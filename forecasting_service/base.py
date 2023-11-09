@@ -72,6 +72,11 @@ class BaseService:
         with open(os.path.join(self.exp_dir, "response.json"), "w") as f:
             json.dump(response_msg, f, indent=2)
 
+    def publish_evaluation(self, evaluation):
+        response_msg = {"evaluation": {"R2": evaluation}}
+        with open(os.path.join(self.exp_dir, "evaluation.json"), "w") as f:
+            json.dump(response_msg, f, indent=2)
+
     def save_model_instance(self, model):
         model.save_model(os.path.join(self.exp_dir, "model"))
 
@@ -179,6 +184,10 @@ class BaseService:
                 # publish predictions
                 with self.trace(tracer, "Pipeline-publish"):
                     self.publish_predictions(predictions)
+
+                # publish evaluation
+                with self.trace(tracer, "Pipeline-publish"):
+                    self.publish_evaluation(model.progressive_score)
 
                 self.send_job_response(
                     job_id=run_configs["job_id"],

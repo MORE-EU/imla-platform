@@ -95,9 +95,15 @@ class ForecastingService(BaseService):
         if model.best_pipeline:
             preds = model.predict(X)
             for index, pred in zip(indexes, preds):
-                predictions[str(index)] = pred
+                try:
+                    predictions[str(int(index.timestamp()))] = pred
+                except:
+                    predictions[str(index)] = pred
 
-        model.train(X, y, **fit_params)
+        try:
+            model.train(X, y, **fit_params)
+        except Exception as e:
+            raise Exception(f"ERROR in SAIL: {str(e)}")
 
         return predictions
 
