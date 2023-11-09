@@ -32,7 +32,7 @@ LOGGER = configure_logger(logger_name="GRPC_Server", package_name=None)
 
 
 class GRPCServer:
-    def __init__(self, hostname, port, data_dir) -> None:
+    def __init__(self, hostname, port, data_dir, config_dir) -> None:
         signal.signal(signal.SIGINT, self.stop)
         signal.signal(signal.SIGTERM, self.stop)
 
@@ -47,7 +47,7 @@ class GRPCServer:
         self.executor = futures.ThreadPoolExecutor(max_workers=5)
         self.server = grpc.server(self.executor)
         self.servicer = RouteGuideServicer(
-            rabbitmq_context=rabbitmq_context, data_dir=data_dir
+            rabbitmq_context=rabbitmq_context, data_dir=data_dir, config_dir=config_dir
         )
         forecasting_pb2_grpc.add_RouteGuideServicer_to_server(
             self.servicer, self.server
@@ -82,10 +82,17 @@ if __name__ == "__main__":
         type=str,
         required=True,
     )
+    parser.add_argument(
+        "--config_dir",
+        help="Path to forecasting config directory",
+        type=str,
+        required=True,
+    )
 
     args = parser.parse_args()
     data_dir = args.data_dir
+    config_dir = args.config_dir
     os.makedirs(data_dir, exist_ok=True)
 
     LOGGER.info(f"Starting IBM Forecasting GRPC server")
-    GRPCServer(config.GRPC_HOST, config.GRPC_PORT, data_dir)
+    GRPCServer(config.GRPC_HOST, config.GRPC_PORT, data_dir, config_dir)

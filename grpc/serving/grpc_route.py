@@ -14,7 +14,7 @@ from grpc import StatusCode
 LOGGER = configure_logger(logger_name="GRPC_Server", package_name=None)
 
 EXPERIMENT_TO_CONFIG_FILE = {
-    "WIND_POWER_ESTIMATION": "configs/run_configs_regression_wind_turbine.yaml"
+    "WIND_POWER_ESTIMATION": "regression_wind_power_estimation.yaml"
 }
 
 # Define a shared variable to hold the object returned from the background task
@@ -30,10 +30,11 @@ class ServerMessageHandler:
 
 
 class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
-    def __init__(self, rabbitmq_context, data_dir):
+    def __init__(self, rabbitmq_context, data_dir, config_dir):
         self.jobs = {}
         self.rabbitmq_context = rabbitmq_context
         self.data_dir = data_dir
+        self.config_dir = config_dir
 
     def process_reponse(self):
         with self.rabbitmq_context.client() as client:
@@ -73,7 +74,7 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
         for target in configs["targetColumn"]:
             self.jobs[request.id] = {target: {"status": "waiting"}}
 
-            with open(EXPERIMENT_TO_CONFIG_FILE[configs["experiment"]]) as fp:
+            with open(os.path.join(self.config_dir, EXPERIMENT_TO_CONFIG_FILE[configs["experiment"]])) as fp:
                 run_configs = yaml.safe_load(fp)
 
             # append parameters
@@ -131,7 +132,7 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
                     # assign the prediction results for each model
                     data["SAILModel"] = forecasting_pb2.Predictions(
                         predictions=self.get_predictions(target_data),
-                        evaluation={"MSE": 345.457},
+                        evaluation=self.get_evaluation(target_data),
                     )
 
                     return forecasting_pb2.Results(target=target, metrics=data)
@@ -163,7 +164,7 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
                 if target_data["status"] == "done":
                     data[target]["SAILModel"] = forecasting_pb2.Predictions(
                         predictions=self.get_predictions(target_data),
-                        evaluation={"MSE": 345.457},
+                        evaluation=self.get_evaluation(target_data),
                     )
 
                 # add the target column and its results to the response
@@ -188,6 +189,16 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
                 for timestamp, value in response["predictions"].items()
             }
             return predictions
+
+    def get_evaluation(self, target_data):
+        service = target_data["service"]
+        experiment_name = target_data["experiment"]
+
+        with open(
+            os.path.join(self.data_dir, service, experiment_name, "evaluation.json")
+        ) as output:
+            response = json.load(output)
+            return response["evaluation"]
 
     # def GetInference(self, request, context):
     #   # get the timestamp from the request and convert it to a datetime object
