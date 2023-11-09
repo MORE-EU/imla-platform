@@ -187,7 +187,7 @@ class BaseService:
 
                 # publish evaluation
                 with self.trace(tracer, "Pipeline-publish"):
-                    self.publish_evaluation(model._scorer.metrics)
+                    self.publish_evaluation(model.metrics)
 
                 self.send_job_response(
                     job_id=run_configs["job_id"],

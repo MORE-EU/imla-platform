@@ -33,49 +33,54 @@ class ForecastingService(BaseService):
     def create_model_instance(self, configs, tracer):
         sail_auto_pipeline_params = {}
 
-        sail_auto_pipeline_params["pipeline"] = SAILPipeline(
-            **flatten_list(param_parser(configs["sail_pipeline"]))
-        )
-
-        if isinstance(configs["parameter_grid"], list):
-            sail_auto_pipeline_params["pipeline_params_grid"] = [
-                flatten_list(grid) for grid in param_parser(configs["parameter_grid"])
-            ]
-        else:
-            sail_auto_pipeline_params["pipeline_params_grid"] = flatten_list(
-                param_parser(configs["parameter_grid"])[0]
+        try:
+            sail_auto_pipeline_params["pipeline"] = SAILPipeline(
+                **flatten_list(param_parser(configs["sail_pipeline"]))
             )
 
-        sail_auto_pipeline_params["search_method"] = configs["search_method"]
-        sail_auto_pipeline_params["search_method_params"] = flatten_list(
-            param_parser(configs["search_method_params"])
-        )
+            if isinstance(configs["parameter_grid"], list):
+                sail_auto_pipeline_params["pipeline_params_grid"] = [
+                    flatten_list(grid) for grid in param_parser(configs["parameter_grid"])
+                ]
+            else:
+                sail_auto_pipeline_params["pipeline_params_grid"] = flatten_list(
+                    param_parser(configs["parameter_grid"])[0]
+                )
 
-        if os.environ.get("POD_NAME"):
-            exp_dir = self.exp_dir.split("/")[-1]
-            data_dir = self.exp_dir.replace(exp_dir, "")
-            storage_path = os.path.join(data_dir, os.environ.get("POD_NAME"), exp_dir)
-        else:
-            storage_path = self.exp_dir
+            sail_auto_pipeline_params["search_method"] = configs["search_method"]
+            sail_auto_pipeline_params["search_method_params"] = flatten_list(
+                param_parser(configs["search_method_params"])
+            )
 
-        sail_auto_pipeline_params["search_method_params"]["storage_path"] = storage_path
-        sail_auto_pipeline_params["search_data_size"] = configs["search_data_size"]
-        sail_auto_pipeline_params["incremental_training"] = configs[
-            "incremental_training"
-        ]
-        sail_auto_pipeline_params["drift_detector"] = param_parser(
-            configs["drift_detector"]
-        )
-        sail_auto_pipeline_params["pipeline_strategy"] = configs["pipeline_strategy"]
-        sail_auto_pipeline_params["verbosity_level"] = configs["verbosity_level"]
-        sail_auto_pipeline_params["verbosity_interval"] = configs["verbosity_interval"]
+            if os.environ.get("POD_NAME"):
+                exp_dir = self.exp_dir.split("/")[-1]
+                data_dir = self.exp_dir.replace(exp_dir, "")
+                storage_path = os.path.join(data_dir, os.environ.get("POD_NAME"), exp_dir)
+            else:
+                storage_path = self.exp_dir
 
-        if configs["tensorboard_log_dir"]:
-            sail_auto_pipeline_params["tensorboard_log_dir"] = self.exp_dir
+            sail_auto_pipeline_params["search_method_params"]["storage_path"] = storage_path
+            sail_auto_pipeline_params["search_data_size"] = configs["search_data_size"]
+            sail_auto_pipeline_params["incremental_training"] = configs[
+                "incremental_training"
+            ]
+            sail_auto_pipeline_params["drift_detector"] = param_parser(
+                configs["drift_detector"]
+            )
+            sail_auto_pipeline_params["pipeline_strategy"] = configs["pipeline_strategy"]
+            sail_auto_pipeline_params["verbosity_level"] = configs["verbosity_level"]
+            sail_auto_pipeline_params["verbosity_interval"] = configs["verbosity_interval"]
 
-        sail_auto_pipeline_params["tracer"] = tracer
+            if configs["tensorboard_log_dir"]:
+                sail_auto_pipeline_params["tensorboard_log_dir"] = self.exp_dir
 
-        return SAILAutoPipeline(**sail_auto_pipeline_params)
+            sail_auto_pipeline_params["tracer"] = tracer
+
+            return SAILAutoPipeline(**sail_auto_pipeline_params)
+        
+        except Exception as e:
+            LOGGER.error(f"Error in parsing configs: {str(e)}")
+            raise Exception(f"Error in parsing configs: {str(e)}")
 
     def process_ts_batch(self, model, ts_batch, target, timestamp_col, fit_params):
         if not super(ForecastingService, self).process_ts_batch(
