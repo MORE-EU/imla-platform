@@ -73,7 +73,7 @@ class BaseService:
             json.dump(response_msg, f, indent=2)
 
     def publish_evaluation(self, evaluation):
-        response_msg = {"evaluation": {"R2": evaluation}}
+        response_msg = {"evaluation": evaluation}
         with open(os.path.join(self.exp_dir, "evaluation.json"), "w") as f:
             json.dump(response_msg, f, indent=2)
 
@@ -187,7 +187,11 @@ class BaseService:
 
                 # publish evaluation
                 with self.trace(tracer, "Pipeline-publish"):
-                    self.publish_evaluation(model.progressive_score)
+                    self.publish_evaluation(
+                        {
+                            model._scorer._metric.__class__.__name__: model.progressive_score
+                        }
+                    )
 
                 self.send_job_response(
                     job_id=run_configs["job_id"],
