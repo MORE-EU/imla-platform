@@ -2,7 +2,7 @@ import json
 import os
 import threading
 from datetime import datetime
-
+import shutil
 import numpy as np
 import serving.forecasting_pb2 as forecasting_pb2
 import serving.forecasting_pb2_grpc as forecasting_pb2_grpc
@@ -74,7 +74,11 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
         for target in configs["targetColumn"]:
             self.jobs[request.id] = {target: {"status": "waiting"}}
 
-            with open(os.path.join(self.config_dir, EXPERIMENT_TO_CONFIG_FILE[configs["experiment"]])) as fp:
+            with open(
+                os.path.join(
+                    self.config_dir, EXPERIMENT_TO_CONFIG_FILE[configs["experiment"]]
+                )
+            ) as fp:
                 run_configs = yaml.safe_load(fp)
 
             # append parameters
@@ -199,6 +203,41 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
         ) as output:
             response = json.load(output)
             return response["evaluation"]
+
+    def SaveModel(self, request, context):
+        # get the information
+        model_type = request.model_type
+        model_name = request.model_name
+        target_req = request.target
+
+        for job_id, target_dict in self.jobs.items():
+            # verify that target exist in trainers
+            for target, target_data in target_dict.items():
+                if target == target_req:
+                    status = target_data["status"]
+                    if status == "done":
+                        target_data = self.jobs[job_id][target]
+                        shutil.move(
+                            os.path.join(
+                                self.data_dir,
+                                target_data["service"],
+                                target_data["experiment"],
+                                "model",
+                            ),
+                            os.path.join(
+                                self.data_dir,
+                                target_data["service"],
+                                target_data["experiment"],
+                                model_name,
+                            ),
+                        ),
+                    return forecasting_pb2.Status(id=job_id, status=status)
+
+        # return empty response
+        context.abort(
+            StatusCode.INVALID_ARGUMENT,
+            "Task has not finished yet or not exists",
+        )
 
     # def GetInference(self, request, context):
     #   # get the timestamp from the request and convert it to a datetime object

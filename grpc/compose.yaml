@@ -23,9 +23,10 @@ services:
       RABBITMQ_GRPC_PRODUCER_QUEUE: ${RABBITMQ_GRPC_PRODUCER_QUEUE}
       GRPC_HOST: ${GRPC_HOST}
       GRPC_PORT: ${GRPC_PORT}
-    entrypoint: ["python", "serving/grpc_server.py", "--data_dir", "/data"]
+    entrypoint: ["python", "serving/grpc_server.py", "--data_dir", "/data", "--config_dir", "/config"]
     volumes:
       - /home/dhaval/dev/forecasting-service/data:/data
+      - /home/dhaval/dev/forecasting-service/examples:/config
 
 # networks:
 #   default:

@@ -62,6 +62,16 @@ def get_all_results(stub):
 
     print(f"Received message - {MessageToDict(response)}")
 
+def save_model(stub):
+    response = stub.SaveModel(
+        ParseDict(
+            {"model_type": "SAIL_AutoML", "model_name": "SAILModel", "target": "active_power"},
+            forecasting_pb2.ModelInfo(),
+        )
+    )
+
+    print(f"Received message - {MessageToDict(response)}")
+
 
 def get_inference(stub):
     response = stub.GetInference(
@@ -93,6 +103,9 @@ def run(service):
         elif service == "all_results":
             print("-------------- GetAllTargetsResults --------------")
             get_all_results(stub)
+        elif service == "save":
+            print("-------------- GetAllTargetsResults --------------")
+            save_model(stub)
         # elif service == "inference":
         #     print("-------------- GetInference --------------")
         #     get_inference(stub)
