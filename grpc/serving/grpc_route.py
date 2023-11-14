@@ -222,7 +222,7 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
                                 self.data_dir,
                                 target_data["service"],
                                 target_data["experiment"],
-                                "model",
+                                target_data.pop("model","model"),
                             ),
                             os.path.join(
                                 self.data_dir,
@@ -231,6 +231,7 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
                                 model_name,
                             ),
                         ),
+                        target_data["model"] = model_name
                     return forecasting_pb2.Status(id=job_id, status=status)
 
         # return empty response
