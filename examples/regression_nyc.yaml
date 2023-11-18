@@ -256,7 +256,6 @@ sail:
   verbosity_interval: 1 # default is null
   tensorboard_log_dir: /data
   tracer:
-    service_name: ForecastingService
     oltp_endpoint: http://83.212.75.52:31318
     web_interface: http://master.more2020.eu:31686
 
@@ -274,4 +273,4 @@ data_stream:
   data_batch_size: 250
   data_ingestion_freq: 0 #ingestion frequency in sec
 
-save_model_after_training: false
+save_model_after_training: true
