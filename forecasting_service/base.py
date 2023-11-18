@@ -40,7 +40,7 @@ class BaseService:
         self.ts_factory = TimeseriesFactory(source_db_conn=modelardb_conn)
 
     def create_client(self):
-        self.client = self.message_broker.client()
+        return self.message_broker.client()
 
     def create_experiment_directory(self, data_dir):
         exp_name = "ForecastingTask" + "_" + time.strftime("%d-%m-%Y_%H:%M:%S")
@@ -65,7 +65,7 @@ class BaseService:
             "target": target,
             "response": response,
         }
-        self.client.get_publisher().publish(json.dumps(message, default=str))
+        self.create_client().get_publisher().publish(json.dumps(message, default=str))
 
     def publish_predictions(self, predictions):
         response_msg = {"predictions": predictions}
@@ -106,11 +106,8 @@ class BaseService:
         try:
             mh = MessageHandler()
 
-            # create client to consume message
-            self.create_client()
-
             # Receive one task at a time from Message Broker
-            self.client.get_consumer().receive(mh.handler, max_messages=1, timeout=None)
+            self.create_client().get_consumer().receive(mh.handler, max_messages=1, timeout=None)
 
             # get message from handler
             run_configs = mh.get_message()
@@ -216,7 +213,6 @@ class BaseService:
             LOGGER.exception(e)
         finally:
             ray.shutdown()
-            self.client.stop()
 
     def run_forever(self, method, **kwargs):
         while True:
