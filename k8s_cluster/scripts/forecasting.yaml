@@ -20,7 +20,7 @@ spec:
         node-role.kubernetes.io/worker: ""
       containers:
       - name: forecasting-container
-        image: dhavalsalwala/forecasting-service:1.0.0
+        image: dhavalsalwala/forecasting-service:1.4.1
         imagePullPolicy: IfNotPresent
         args: ["--data_dir", "/data"]
         resources: {}
@@ -77,16 +77,85 @@ spec:
             configMapKeyRef:
               name: more-configmap
               key: RABBITMQ_PORT
-        - name: RABBITMQ_CONSUMER_QUEUE
+        - name: FORECASTING_CONSUMER_QUEUE
           valueFrom:
             configMapKeyRef:
               name: more-configmap
-              key: RABBITMQ_CONSUMER_QUEUE
-        - name: RABBITMQ_PRODUCER_QUEUE
+              key: FORECASTING_CONSUMER_QUEUE
+        - name: FORECASTING_PRODUCER_QUEUE
           valueFrom:
             configMapKeyRef:
               name: more-configmap
-              key: RABBITMQ_PRODUCER_QUEUE
+              key: FORECASTING_PRODUCER_QUEUE
+
+      - name: forecasting-grpc-container
+        image: dhavalsalwala/forecasting-service:1.4.1
+        imagePullPolicy: IfNotPresent
+        args: ["--data_dir", "/data"]
+        resources: {}
+        volumeMounts:
+          - name: forecasting-data
+            mountPath: /data
+            subPathExpr: $(POD_NAME)
+          - name: forecasting-datasets
+            mountPath: /datasets
+
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: MODELARDB_HOSTNAME
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: MODELARDB_HOSTNAME
+        - name: MODELARDB_PORT
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: MODELARDB_PORT
+        - name: MODELARDB_INTERFACE
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: MODELARDB_INTERFACE
+        - name: LOGGING_LEVEL
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: LOGGING_LEVEL
+        - name: RABBITMQ_USER
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: RABBITMQ_USER
+        - name: RABBITMQ_PASS
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: RABBITMQ_PASS
+        - name: RABBITMQ_HOST
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: RABBITMQ_HOST
+        - name: RABBITMQ_PORT
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: RABBITMQ_PORT
+        - name: FORECASTING_CONSUMER_QUEUE
+          valueFrom:
+            configMapKeyRef:
+              name: more-configmap
+              key: GRPC_PRODUCER_QUEUE
+        - name: FORECASTING_PRODUCER_QUEUE
+          valueFrom:
+            configMapKeyRef:
+              name: more-configmap
+              key: GRPC_CONSUMER_QUEUE
 
       volumes:
       - name: forecasting-data

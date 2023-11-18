@@ -51,7 +51,7 @@ spec:
     spec:
       containers:
       - name: modelardbd-rs
-        image: dhavalsalwala/modelardb-rs:17Oct23
+        image: dhavalsalwala/modelardb-rs:1Nov23
         imagePullPolicy: IfNotPresent
         volumeMounts:
           - mountPath: /data

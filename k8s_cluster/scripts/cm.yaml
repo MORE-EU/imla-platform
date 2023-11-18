@@ -8,8 +8,10 @@ data:
     RABBITMQ_PASS: admin
     RABBITMQ_PORT: "5672"
     RABBITMQ_HOST: messaging-service
-    RABBITMQ_CONSUMER_QUEUE: forecasting-job
-    RABBITMQ_PRODUCER_QUEUE: forecasting-response
+    FORECASTING_CONSUMER_QUEUE: forecasting-job
+    FORECASTING_PRODUCER_QUEUE: forecasting-response
+    GRPC_CONSUMER_QUEUE: grpc-response
+    GRPC_PRODUCER_QUEUE: grpc-job
     MODELARDB_HOSTNAME: modelardbd-service
     MODELARDB_PORT: "9999"
     MODELARDB_INTERFACE: arrow
@@ -18,3 +20,5 @@ data:
     AWS_DEFAULT_REGION: eu-central-1
     AWS_ENDPOINT: http://minio-service:9000
     AWS_ALLOW_HTTP: "true"
+    GRPC_HOST: "[::]"
+    GRPC_PORT: "50051"

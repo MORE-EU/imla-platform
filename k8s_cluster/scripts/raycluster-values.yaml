@@ -14,17 +14,35 @@ head:
     requests:
       cpu: "14"
       memory: "10G"
+  volumeMounts:
+    - mountPath: /data
+      name: ray-output
+  volumes:
+    - name: ray-output
+      nfs:
+        server: master.more2020.eu
+        path: /data/1/k8s/forecasting_data
+  # Ray writes logs to /tmp/ray/session_latests/logs
 
 worker:
   nodeSelector:
     node-role.kubernetes.io/worker: ""
   resources:
     limits:
-      cpu: "7"
+      cpu: "14"
       memory: "10G"
     requests:
-      cpu: "7"
+      cpu: "14"
       memory: "10G"
+  volumeMounts:
+    - mountPath: /data
+      name: ray-output
+  volumes:
+    - name: ray-output
+      nfs:
+        server: master.more2020.eu
+        path: /data/1/k8s/forecasting_data
+        
   replicas: 2
   minReplicas: 2
   maxReplicas: 2

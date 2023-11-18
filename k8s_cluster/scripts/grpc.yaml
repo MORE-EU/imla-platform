@@ -1,0 +1,104 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ibm-grpc-server
+  namespace: more-demo
+  labels:
+    app: ibm-grpc-server
+spec:
+  replicas: 1
+  selector: 
+    matchLabels:
+      app: ibm-grpc-server
+  template:
+    metadata:
+      labels:
+        app: ibm-grpc-server
+    spec:
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+      containers:
+      - name: ibm-grpc-container
+        image: dhavalsalwala/ibm-grpc-server:1.0.0
+        imagePullPolicy: IfNotPresent
+        args: ["--data_dir", "/data", "--config_dir", "/config"]
+        resources: {}
+        env:
+        - name: LOGGING_LEVEL
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: LOGGING_LEVEL
+        - name: RABBITMQ_USER
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: RABBITMQ_USER
+        - name: RABBITMQ_PASS
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: RABBITMQ_PASS
+        - name: RABBITMQ_HOST
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: RABBITMQ_HOST
+        - name: RABBITMQ_PORT
+          valueFrom: 
+            configMapKeyRef:
+              name: more-configmap
+              key: RABBITMQ_PORT
+        - name: GRPC_CONSUMER_QUEUE
+          valueFrom:
+            configMapKeyRef:
+              name: more-configmap
+              key: GRPC_CONSUMER_QUEUE
+        - name: GRPC_PRODUCER_QUEUE
+          valueFrom:
+            configMapKeyRef:
+              name: more-configmap
+              key: GRPC_PRODUCER_QUEUE
+        - name: GRPC_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: more-configmap
+              key: GRPC_HOST
+        - name: GRPC_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: more-configmap
+              key: GRPC_PORT
+        ports:
+        - containerPort: 50051
+        volumeMounts:
+          - name: forecasting-data
+            mountPath: /data
+          - name: config-data
+            mountPath: /config
+      volumes:
+        - name: forecasting-data
+          nfs:
+            server: master.more2020.eu
+            path: /data/1/k8s/forecasting_data
+        - name: config-data
+          nfs:
+            server: master.more2020.eu
+            path: /data/1/k8s/forecasting_data/configs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ibm-grpc-service
+  namespace: more-demo
+spec:
+  type: NodePort
+  selector:
+    app: ibm-grpc-server
+  ports:
+    - name: server
+      protocol: TCP
+      port: 50051
+      targetPort: 50051
+      nodePort: 31051
