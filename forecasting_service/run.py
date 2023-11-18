@@ -2,6 +2,7 @@ import os
 
 import config
 import more_utils
+import json
 
 more_utils.set_logging_level(config.LOGGING_LEVEL)
 import signal
@@ -29,8 +30,8 @@ broker_configs = {
     "broker_host": config.RABBITMQ_HOST,
     "broker_port": config.RABBITMQ_PORT,
     "broker_vhost": "/",
-    "broker_request_queue": config.RABBITMQ_CONSUMER_QUEUE,
-    "broker_response_queue": config.RABBITMQ_PRODUCER_QUEUE,
+    "broker_request_queue": config.FORECASTING_CONSUMER_QUEUE,
+    "broker_response_queue": config.FORECASTING_PRODUCER_QUEUE,
     "broker_delayed_exchange": "delay",
     "broker_user": config.RABBITMQ_USER,
     "broker_password": config.RABBITMQ_PASS,
@@ -44,6 +45,16 @@ def signal_handler(sig, frame):
 
 def run_service(data_dir):
     try:
+        LOGGER.info(
+            "ModelarDB configs received:\n"
+            + json.dumps(modelardb_configs, indent=2)
+        )
+
+        LOGGER.info(
+            "Broker configs received:\n"
+            + json.dumps(broker_configs, indent=2)
+        )
+
         validate_host_and_port(config.MODELARDB_HOSTNAME, config.MODELARDB_PORT)
         modelardb_conn = ModelarDB.connect(**modelardb_configs)
         LOGGER.info(
