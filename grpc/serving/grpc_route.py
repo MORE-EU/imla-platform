@@ -54,12 +54,21 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
                             f"Message Received: {message} for job_id: {job_id} and target: {target}"
                         )
                         target_data = self.jobs[job_id][target]
+                        msg_response = {
+                            "timestamp": message["timestamp"],
+                            "service": message["service"],
+                            "task": message["experiment"],
+                            "response": message["response"],
+                        }
+
+                        if target_data["status"] == "inference":
+                            target_data.setdefault("inference", {}).update(msg_response)
+                        else:
+                            target_data.update(msg_response)
+
                         if "COMPLETED" == message["status"]:
                             target_data["status"] = "done"
-                        target_data["timestamp"] = message["timestamp"]
-                        target_data["service"] = message["service"]
-                        target_data["experiment"] = message["experiment"]
-                        target_data["response"] = message["response"]
+
                     else:
                         LOGGER.error(f"Invalid Job Id received. Message: {message}")
 
@@ -97,6 +106,7 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
                 publisher.publish(json.dumps(run_configs))
 
             self.jobs[request.id][target]["status"] = "processing"
+            self.jobs[request.id][target]["run_configs"] = run_configs
 
         return forecasting_pb2.Status(id=request.id, status="started")
 
@@ -182,10 +192,10 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
 
     def get_predictions(self, target_data):
         service = target_data["service"]
-        experiment_name = target_data["experiment"]
+        task_name = target_data["task"]
 
         with open(
-            os.path.join(self.data_dir, service, experiment_name, "response.json")
+            os.path.join(self.data_dir, service, task_name, "response.json")
         ) as output:
             response = json.load(output)
             predictions = {
@@ -196,10 +206,10 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
 
     def get_evaluation(self, target_data):
         service = target_data["service"]
-        experiment_name = target_data["experiment"]
+        task_name = target_data["task"]
 
         with open(
-            os.path.join(self.data_dir, service, experiment_name, "evaluation.json")
+            os.path.join(self.data_dir, service, task_name, "evaluation.json")
         ) as output:
             response = json.load(output)
             return response["evaluation"]
@@ -216,18 +226,17 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
                 if target == target_req:
                     status = target_data["status"]
                     if status == "done":
-                        target_data = self.jobs[job_id][target]
                         shutil.move(
                             os.path.join(
                                 self.data_dir,
                                 target_data["service"],
-                                target_data["experiment"],
-                                target_data.pop("model","model"),
+                                target_data["task"],
+                                target_data.pop("model", "model"),
                             ),
                             os.path.join(
                                 self.data_dir,
                                 target_data["service"],
-                                target_data["experiment"],
+                                target_data["task"],
                                 model_name,
                             ),
                         ),
@@ -240,21 +249,46 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
             "Task has not finished yet or not exists",
         )
 
-    # def GetInference(self, request, context):
-    #   # get the timestamp from the request and convert it to a datetime object
-    #   date = datetime.fromtimestamp(request.timestamp / 1000)
-    #   model_name = request.model_name
+    def GetInference(self, request, context):
+        # get the timestamp from the request and convert it to a datetime object
+        date = datetime.fromtimestamp(request.timestamp / 1000)
+        model_name = request.model_name
 
-    #   # Convert date to dataframe and set it as the index
-    #   date = pd.DataFrame({'timestamp': [date]})
-    #   date['timestamp'] = pd.to_datetime(date['timestamp'])
-    #   date = date.set_index('timestamp')
+        y_pred = None
+        for target_dict in self.jobs.values():
+            for target_data in target_dict.values():
+                if (
+                    target_data["status"] == "done"
+                    and "model" in target_data
+                    and target_data["model"] == model_name
+                ):
+                    run_configs = target_data["run_configs"]
+                    run_configs["sail"]["model_path"] = os.path.join(
+                        "/data",
+                        target_data["task"],
+                        target_data["model"],
+                    )
+                    run_configs["data_stream"]["from_date"] = str(date)
+                    run_configs["data_stream"]["to_date"] = None
+                    run_configs["data_stream"]["data_limit"] = run_configs[
+                        "data_stream"
+                    ]["data_batch_size"]
 
-    #   # get the predictions for the given timestamp and assign to Any type
-    #   y_pred = predict(request.timestamp, date, model_name)
+                    with self.rabbitmq_context.client() as client:
+                        publisher = client.get_publisher()
+                        publisher.publish(json.dumps(run_configs))
+                        target_data["status"] = "inference"
 
-    #   if y_pred is None:
-    #     # return empty response if model not exist
-    #     context.abort(StatusCode.INVALID_ARGUMENT, "Model does not exist")
-    #   else:
-    #     return forecasting_pb2.Inference(predictions=y_pred)
+                        while True:
+                            if target_data["status"] == "done":
+                                y_pred = self.get_predictions(target_data["inference"])
+                                break
+
+        if y_pred is None:
+            # return empty response if model not exist
+            context.abort(
+                StatusCode.INVALID_ARGUMENT,
+                "Model does not exist. Training still in progress or you did not call SaveModel.",
+            )
+        else:
+            return forecasting_pb2.Inference(predictions=y_pred)

@@ -73,15 +73,15 @@ def save_model(stub):
     print(f"Received message - {MessageToDict(response)}")
 
 
-# def get_inference(stub):
-#     response = stub.GetInference(
-#         ParseDict(
-#             {"timestamp": 1345667, "model_name": "SAILModel"},
-#             forecasting_pb2.Timestamp(),
-#         )
-#     )
+def get_inference(stub):
+    response = stub.GetInference(
+        ParseDict(
+            {"timestamp": 1536453200000, "model_name": "SAILModel"},
+            forecasting_pb2.Timestamp(),
+        )
+    )
 
-#     print(f"Received message - {MessageToDict(response)}")
+    print(f"Received message - {MessageToDict(response)}")
 
 
 def run(service):
@@ -106,9 +106,9 @@ def run(service):
         elif service == "save":
             print("-------------- SaveModel --------------")
             save_model(stub)
-        # elif service == "inference":
-        #     print("-------------- GetInference --------------")
-        #     get_inference(stub)
+        elif service == "inference":
+            print("-------------- GetInference --------------")
+            get_inference(stub)
         else:
             print("-------------- Error: Invalid service name. --------------")
 
