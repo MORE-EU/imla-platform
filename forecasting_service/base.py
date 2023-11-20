@@ -203,12 +203,13 @@ class BaseService:
                 )
 
         except Exception as e:
-            self.send_job_response(
-                job_id=run_configs["job_id"],
-                status="ERROR",
-                target=run_configs["data_stream"]["target"],
-                response=str(e),
-            )
+            if run_configs:
+                self.send_job_response(
+                    job_id=run_configs["job_id"],
+                    status="ERROR",
+                    target=run_configs["data_stream"]["target"],
+                    response=str(e),
+                )
             LOGGER.error(f"Error processing new request:")
             LOGGER.exception(e)
         finally:
