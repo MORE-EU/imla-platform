@@ -7,6 +7,22 @@ from google.protobuf.json_format import MessageToDict, ParseDict
 
 import grpc
 
+def get_state(stub):
+    response = stub.GetProgress(
+        ParseDict(
+            {"id": "get_state"},
+            forecasting_pb2.JobID(),
+        )
+    )
+
+    message = MessageToDict(response)
+    state = json.loads(message["data"]["state"])
+
+    for job_id, target_dict in state.items():
+        for target, target_data in target_dict.items():
+            del target_data["run_configs"]
+
+    print(f"Received message - {json.dumps(state, indent=2)}")
 
 def start_training(stub):
     response = stub.StartTraining(
@@ -91,7 +107,10 @@ def run(service):
     with grpc.insecure_channel("83.212.75.52:31051") as channel:
         stub = forecasting_pb2_grpc.RouteGuideStub(channel)
 
-        if service == "training":
+        if service == "state":
+            print("-------------- GRPC_STATE --------------")
+            get_state(stub)
+        elif service == "training":
             print("-------------- StartTraining --------------")
             start_training(stub)
         elif service == "progress":

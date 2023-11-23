@@ -62,7 +62,7 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
                         }
 
                         if target_data["status"] == "inference":
-                            target_data.setdefault("inference", {}).update(msg_response)
+                            target_data["inference"] = msg_response
                         else:
                             target_data.update(msg_response)
 
@@ -71,6 +71,11 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
 
                     else:
                         LOGGER.error(f"Invalid Job Id received. Message: {message}")
+
+    def get_state(self, job_id):
+        return forecasting_pb2.Progress(
+            id=job_id, data={"state": json.dumps(self.jobs)}
+        )
 
     def StartTraining(self, request, context):
         LOGGER.info(f"[StartTraining] - Request received with job id:{request.id}.")
@@ -117,18 +122,21 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
         """
         job_id = request.id
 
-        if job_id in self.jobs:
-            # Create a Struct message
-            data = {}
-
-            # Add the status of each target column to the struct
-            for target, target_data in self.jobs[job_id].items():
-                data[target] = target_data["status"]
-
-            return forecasting_pb2.Progress(id=job_id, data=data)
+        if job_id == "get_state":
+            return self.get_state(job_id)
         else:
-            # return empty response
-            context.abort(StatusCode.INVALID_ARGUMENT, "Not a valid job id")
+            if job_id in self.jobs:
+                # Create a Struct message
+                data = {}
+
+                # Add the status of each target column to the struct
+                for target, target_data in self.jobs[job_id].items():
+                    data[target] = target_data["status"]
+
+                return forecasting_pb2.Progress(id=job_id, data=data)
+            else:
+                # return empty response
+                context.abort(StatusCode.INVALID_ARGUMENT, "Not a valid job id")
 
     def GetSpecificTargetResults(self, request, context):
         """
