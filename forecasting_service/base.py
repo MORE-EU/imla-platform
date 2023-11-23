@@ -107,7 +107,9 @@ class BaseService:
             mh = MessageHandler()
 
             # Receive one task at a time from Message Broker
-            self.create_client().get_consumer().receive(mh.handler, max_messages=1, timeout=None)
+            self.create_client().get_consumer().receive(
+                mh.handler, max_messages=1, timeout=None
+            )
 
             # get message from handler
             run_configs = mh.get_message()
@@ -129,19 +131,18 @@ class BaseService:
             tracer = None
             tracer_configs = run_configs["sail"]["tracer"]
             if tracer_configs:
-                if validate_address(
-                    tracer_configs["oltp_endpoint"], throw_exception=False
-                ):
+                otlp_endpoint = tracer_configs["otlp_endpoint"]
+                if validate_address(otlp_endpoint, throw_exception=False):
                     tracer = TracingClient(
                         service_name=SERVICE_NAME,
-                        otlp_endpoint=tracer_configs["oltp_endpoint"],
+                        otlp_endpoint=otlp_endpoint,
                     )
                     LOGGER.info(
                         f"Telemetry service is enabled. Check traces at: {tracer_configs['web_interface']}/search&service={SERVICE_NAME}"
                     )
                 else:
                     LOGGER.error(
-                        f"Telemetry service at {tracer_configs['oltp_endpoint']} is unreachable."
+                        f"Telemetry service at {otlp_endpoint} is unreachable."
                     )
             else:
                 LOGGER.info(f"Telemetry service is disabled.")
