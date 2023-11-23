@@ -198,14 +198,14 @@ sail:
           - 0.2
 
   search_method: SAILTuneGridSearchCV
-  search_data_size: 5000
+  search_data_size: 1000
   search_method_params:
     - name: verbose 
       value: 3
     - name: num_cpus_per_trial
-      value: 3
-    # - name: n_trials
-    #   value: 100
+      value: 2
+    # - name: n_trials # only to be use with search_method:SAILTuneSearchCV
+    #   value: 8
     - name: max_iters
       value: 1
     - name: early_stopping
@@ -256,7 +256,7 @@ sail:
   verbosity_interval: 1 # default is null
   tensorboard_log_dir: /data
   tracer:
-    oltp_endpoint: http://83.212.75.52:31318
+    otlp_endpoint: http://83.212.75.52:31318
     web_interface: http://master.more2020.eu:31686
 
 data_stream:
@@ -269,7 +269,7 @@ data_stream:
   classes: [] # only applicable for classification problem and when incremental_training is enabled
   from_date: null
   to_date: null
-  data_limit: 10000 # put null for all data
+  data_limit: 2000 # put null for all data
   data_batch_size: 250
   data_ingestion_freq: 0 #ingestion frequency in sec
 

@@ -68,6 +68,8 @@ sail:
       value: 1
     - name: num_cpus_per_trial
       value: 4
+    # - name: n_trials # only to be use with search_method:SAILTuneSearchCV
+    #   value: 8
     - name: max_iters
       value: 1
     - name: early_stopping
@@ -118,7 +120,7 @@ sail:
   verbosity_interval: 1 # default is null
   tensorboard_log_dir: /data
   tracer:
-    oltp_endpoint: http://jaeger-service:4318
+    otlp_endpoint: http://jaeger-service:4318
     web_interface: http://master.more2020.eu/:31686
 
 data_stream:
@@ -130,7 +132,6 @@ data_stream:
   selected_features: null # empty means use all features
   classes: ["1", "0"] # only applicable for classification problem and when incremental_training is enabled
   from_date: null
-  
   to_date: null
   data_limit: 5000 # put null for all data
   data_batch_size: 250

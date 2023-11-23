@@ -94,6 +94,8 @@ sail:
       value: 1
     - name: num_cpus_per_trial
       value: 1
+    # - name: n_trials # only to be use with search_method:SAILTuneSearchCV
+    #   value: 8
     - name: max_iters
       value: 1
     - name: early_stopping
@@ -144,7 +146,7 @@ sail:
   verbosity_interval: 1 # default is null
   tensorboard_log_dir: /data
   tracer: null
-    # oltp_endpoint: http://83.212.75.52:31318
+    # otlp_endpoint: http://83.212.75.52:31318
     # web_interface: http://master.more2020.eu/:31686
 
 data_stream:
