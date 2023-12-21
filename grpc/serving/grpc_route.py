@@ -300,3 +300,28 @@ class RouteGuideServicer(forecasting_pb2_grpc.RouteGuideServicer):
             )
         else:
             return forecasting_pb2.Inference(predictions=y_pred)
+
+    def GetModels(self, request, context):
+        models = []
+        for job_id, target_dict in self.jobs.items():
+            for target, target_data in target_dict.items():
+                if "model" in target_data:
+                    models.append(target_data["model"])
+        
+        return forecasting_pb2.Models(models=models)
+
+    def DeleteModel(self, request, context):
+        # get the information
+        model_name = request.modelName
+
+        model_deleted = 0
+        for job_id, target_dict in self.jobs.items():
+            for target, target_data in target_dict.items():
+                if "model" in target_data and model_name == target_data["model"]:
+                    del target_data["model"]
+                    model_deleted += 1
+        
+        if model_deleted > 0:
+            return forecasting_pb2.Report(report="success")
+        else:
+            return forecasting_pb2.Report(report="error")

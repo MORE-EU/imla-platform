@@ -99,12 +99,32 @@ def get_inference(stub):
 
     print(f"Received message - {MessageToDict(response)}")
 
+def get_models(stub):
+    response = stub.GetModels(
+        ParseDict(
+            {},
+            forecasting_pb2.EmptyRequest(),
+        )
+    )
+
+    print(f"Received message - {MessageToDict(response)}")
+
+def delete_models(stub):
+    response = stub.DeleteModel(
+        ParseDict(
+            {"modelName": "SAILModel"},
+            forecasting_pb2.ModelName(),
+        )
+    )
+
+    print(f"Received message - {MessageToDict(response)}")
+
 
 def run(service):
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
     # used in circumstances in which the with statement does not fit the needs
     # of the code.
-    with grpc.insecure_channel("83.212.75.52:31051") as channel:
+    with grpc.insecure_channel("localhost:50051") as channel:
         stub = forecasting_pb2_grpc.RouteGuideStub(channel)
 
         if service == "state":
@@ -128,6 +148,12 @@ def run(service):
         elif service == "inference":
             print("-------------- GetInference --------------")
             get_inference(stub)
+        elif service == "get_models":
+            print("-------------- SaveModel --------------")
+            get_models(stub)
+        elif service == "delete_model":
+            print("-------------- GetInference --------------")
+            delete_models(stub)
         else:
             print("-------------- Error: Invalid service name. --------------")
 
