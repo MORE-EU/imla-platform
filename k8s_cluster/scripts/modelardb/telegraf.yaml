@@ -1,0 +1,58 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telegraf
+  namespace: modelardb
+  labels:
+    app: telegraf
+spec:
+  replicas: 1
+  selector: 
+    matchLabels:
+      app: telegraf
+  template:
+    metadata:
+      labels:
+        app: telegraf
+    spec:
+      containers:
+        # - name: output-plugin-builder
+        #   image: dhavalsalwala/output-plugin-builder:9Dec23
+        #   imagePullPolicy: IfNotPresent
+        #   resources: {}
+        #   volumeMounts:
+        #     - name: telegraf-data
+        #       mountPath: /binary
+        - name: telegraf-server
+          image: telegraf
+          imagePullPolicy: IfNotPresent
+          resources: {}
+          volumeMounts:
+            - name: telegraph-conf-vol
+              mountPath: /etc/telegraf/telegraf.conf
+              subPath: telegraf.conf
+            - name: telegraph-sample-vol
+              mountPath: /etc/telegraf/sample.conf
+              subPath: sample.conf
+            - name: telegraph-message-vol
+              mountPath: /etc/telegraf/message.proto
+              subPath: message.proto
+            - name: telegraf-data
+              mountPath: /etc/telegraf
+
+      volumes:
+      - name: telegraf-data
+        nfs:
+          server: master.more2020.eu
+          path: /data/1/k8s/forecasting_data/telegraf
+      - name: telegraph-conf-vol
+        configMap:
+          name: conf-vol
+      - name: telegraph-sample-vol
+        configMap:
+          name: conf-vol
+      - name: telegraph-message-vol
+        configMap:
+          name: conf-vol
+

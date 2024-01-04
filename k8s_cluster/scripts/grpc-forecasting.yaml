@@ -2,42 +2,35 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: forecasting
+  name: grpc-forecasting
   namespace: more-demo
   labels:
-    app: forecasting
+    app: grpc-forecasting
 spec:
-  replicas: 354
+  replicas: 1
   selector: 
     matchLabels:
-      app: forecasting
+      app: grpc-forecasting
   template:
     metadata:
       labels:
-        app: forecasting
+        app: grpc-forecasting
     spec:
       nodeSelector:
         node-role.kubernetes.io/worker: ""
       containers:
-      - name: forecasting-container
+      - name: grpc-forecasting-container
         image: dhavalsalwala/forecasting-service:1.6.1
         imagePullPolicy: IfNotPresent
         args: ["--data_dir", "/data"]
-        resources:
-          requests:
-            memory: "450Mi"
-            cpu: "207m"
-          limits:
-            memory: "450Mi"
-            cpu: "207m"
+        resources: {}
         volumeMounts:
           - name: forecasting-data
             mountPath: /data
             subPathExpr: $(POD_NAME)
           - name: forecasting-datasets
             mountPath: /datasets
-          - name: forecasting-model
-            mountPath: /model_dir
+
         env:
         - name: POD_NAME
           valueFrom:
@@ -88,23 +81,18 @@ spec:
           valueFrom:
             configMapKeyRef:
               name: more-configmap
-              key: FORECASTING_CONSUMER_QUEUE
+              key: GRPC_PRODUCER_QUEUE
         - name: FORECASTING_PRODUCER_QUEUE
           valueFrom:
             configMapKeyRef:
               name: more-configmap
-              key: FORECASTING_PRODUCER_QUEUE
+              key: GRPC_CONSUMER_QUEUE
 
-      
       volumes:
       - name: forecasting-data
         nfs:
           server: master.more2020.eu
-          path: /data/1/k8s/forecasting_data/trials
-      - name: forecasting-model
-        nfs:
-          server: master.more2020.eu
-          path: /data/1/k8s/forecasting_data
+          path: /data/1/k8s/forecasting_data/grpc
       - name: forecasting-datasets
         nfs:
           server: master.more2020.eu

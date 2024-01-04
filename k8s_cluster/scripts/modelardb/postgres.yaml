@@ -1,0 +1,61 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: modelardb
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector: 
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres-server
+          image: postgres:latest
+          resources: {}
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom: 
+                configMapKeyRef:
+                  name: modelardb-configmap
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_USER
+              valueFrom: 
+                configMapKeyRef:
+                  name: modelardb-configmap
+                  key: POSTGRES_USER
+            - name: POSTGRES_DB
+              valueFrom: 
+                configMapKeyRef:
+                  name: modelardb-configmap
+                  key: POSTGRES_DB
+            - name: PGGSSENCMODE
+              valueFrom: 
+                configMapKeyRef:
+                  name: modelardb-configmap
+                  key: PGGSSENCMODE
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: modelardb
+spec:
+  type: NodePort
+  selector:
+    app: postgres
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+      nodePort: 31432

@@ -1,0 +1,174 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: modelardb
+  namespace: modelardb
+  labels:
+    app: modelardb
+spec:
+  replicas: 1
+  selector: 
+    matchLabels:
+      app: modelardb
+  template:
+    metadata:
+      labels:
+        app: modelardb
+    spec:
+      containers:
+      - name: modelardb-manager
+        image: dhavalsalwala/modelardb-manager:9Dec23
+        imagePullPolicy: IfNotPresent
+        resources: {}
+        ports:
+        - containerPort: 9998
+        env:
+          - name: METADATA_DB_HOST
+            valueFrom: 
+              configMapKeyRef:
+                name: modelardb-configmap
+                key: POSTGRES_DB_HOST
+          - name: METADATA_DB_PASSWORD
+            valueFrom: 
+              configMapKeyRef:
+                name: modelardb-configmap
+                key: POSTGRES_PASSWORD
+          - name: METADATA_DB_USER
+            valueFrom: 
+              configMapKeyRef:
+                name: modelardb-configmap
+                key: POSTGRES_USER
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom: 
+              secretKeyRef:
+                name: modelardb-secret
+                key: MINIO_ROOT_USER
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom: 
+              secretKeyRef:
+                name: modelardb-secret
+                key: MINIO_ROOT_PASSWORD
+          - name: AWS_DEFAULT_REGION
+            valueFrom: 
+              configMapKeyRef:
+                name: modelardb-configmap
+                key: AWS_DEFAULT_REGION
+          - name: AWS_ENDPOINT
+            valueFrom: 
+              configMapKeyRef:
+                name: modelardb-configmap
+                key: AWS_ENDPOINT
+          - name: AWS_ALLOW_HTTP
+            valueFrom: 
+              configMapKeyRef:
+                name: modelardb-configmap
+                key: AWS_ALLOW_HTTP
+        command: ["target/release/modelardbm", "metadata", "s3://modelardata"]
+      - name: modelardb-edge
+        image: dhavalsalwala/modelardb-edge:9Dec23
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - name: modelardb-data
+            mountPath: /usr/src/app/data/edge
+            subPathExpr: edge
+        resources: {}
+        ports:
+        - containerPort: 9999
+        env:
+          - name: MODELARDBD_UNCOMPRESSED_DATA_BUFFER_CAPACITY
+            valueFrom: 
+              configMapKeyRef:
+                name: modelardb-configmap
+                key: MODELARDBD_UNCOMPRESSED_DATA_BUFFER_CAPACITY
+          - name: MODELARDBD_COMPRESSED_RESERVED_MEMORY_IN_BYTES
+            valueFrom: 
+              configMapKeyRef:
+                name: modelardb-configmap
+                key: MODELARDBD_COMPRESSED_RESERVED_MEMORY_IN_BYTES
+          - name: MODELARDBD_TRANSFER_BATCH_SIZE_IN_BYTES
+            valueFrom: 
+              configMapKeyRef:
+                name: modelardb-configmap
+                key: MODELARDBD_TRANSFER_BATCH_SIZE_IN_BYTES
+        command: ["target/release/modelardbd", "edge", "data/edge", "grpc://localhost:9998"]
+      - name: modelardb-cloud
+        image: dhavalsalwala/modelardb-cloud:9Dec23
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - name: modelardb-data
+            mountPath: /usr/src/app/data/cloud
+            subPathExpr: cloud
+        resources: {}
+        ports:
+        - containerPort: 9997
+        env:
+          - name: MODELARDBD_PORT
+            valueFrom: 
+              configMapKeyRef:
+                name: modelardb-configmap
+                key: MODELARDBD_PORT
+        command: ["target/release/modelardbd", "cloud", "data/cloud", "grpc://localhost:9998"]
+
+      volumes:
+        - name: modelardb-data
+          persistentVolumeClaim:
+            claimName: modelardb-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: modelardb-service
+  namespace: modelardb
+spec:
+  type: NodePort
+  selector:
+    app: modelardb
+  ports:
+    - name: manager
+      port: 9998
+      targetPort: 9998
+      nodePort: 31998
+    - name: edge
+      port: 9999
+      targetPort: 9999
+      nodePort: 31999
+    - name: cloud
+      port: 9997
+      targetPort: 9997
+      nodePort: 31997
+
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: modelardb-edge
+#   namespace: modelardb
+# spec:
+#   type: NodePort
+#   selector:
+#     app: modelardb
+#   ports:
+#     - name: edge
+#       protocol: TCP
+#       port: 9999
+#       targetPort: 9999
+#       nodePort: 31999
+
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: modelardb-cloud
+#   namespace: modelardb
+# spec:
+#   type: NodePort
+#   selector:
+#     app: modelardb
+#   ports:
+#     - name: cloud
+#       protocol: TCP
+#       port: 9997
+#       targetPort: 9997
+#       nodePort: 31997

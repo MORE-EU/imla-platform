@@ -1,0 +1,33 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: output-plugin
+  namespace: modelardb
+  labels:
+    app: output-plugin
+spec:
+  replicas: 1
+  selector: 
+    matchLabels:
+      app: output-plugin
+  template:
+    metadata:
+      labels:
+        app: output-plugin
+    spec:
+      containers:
+        - name: output-plugin-builder
+          image: dhavalsalwala/output-plugin-builder:9Dec23
+          imagePullPolicy: IfNotPresent
+          resources: {}
+          volumeMounts:
+            - name: telegraf-data
+              mountPath: /binary
+
+      volumes:
+      - name: telegraf-data
+        nfs:
+          server: master.more2020.eu
+          path: /data/1/k8s/forecasting_data/telegraf
+

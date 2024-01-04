@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: minio
-  namespace: more-demo
+  namespace: modelardb
   labels:
     app: minio
 spec:
@@ -27,12 +27,12 @@ spec:
             - name: MINIO_ROOT_USER
               valueFrom: 
                 secretKeyRef:
-                  name: more-secret
+                  name: modelardb-secret
                   key: MINIO_ROOT_USER
             - name: MINIO_ROOT_PASSWORD
               valueFrom: 
                 secretKeyRef:
-                  name: more-secret
+                  name: modelardb-secret
                   key: MINIO_ROOT_PASSWORD
           command:
             - /bin/bash
@@ -53,7 +53,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: minio-service
-  namespace: more-demo
+  namespace: modelardb
 spec:
   type: NodePort
   selector:
@@ -75,7 +75,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: create-bucket
-  namespace: more-demo
+  namespace: modelardb
 spec:
   template:
     spec:

@@ -1,0 +1,30 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: create-table
+  namespace: modelardb
+  labels:
+    app: create-table
+spec:
+  replicas: 1
+  selector: 
+    matchLabels:
+      app: create-table
+  template:
+    metadata:
+      labels:
+        app: create-table
+    spec:
+      containers:
+        - name: create-table
+          image: dhavalsalwala/create-table:9Dec23_1
+          imagePullPolicy: IfNotPresent
+          resources: {}
+          env:
+            - name: MODELARDB_MANAGER_PORT
+              valueFrom: 
+                configMapKeyRef:
+                  name: modelardb-configmap
+                  key: MODELARDB_MANAGER_PORT
+

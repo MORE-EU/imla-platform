@@ -1,29 +1,29 @@
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: minio-pvc
-  namespace: more-demo
-spec:
-  storageClassName: minio-storage
-  resources:
-    requests:
-      storage: 100Gi
-  volumeMode: Filesystem
-  accessModes:
-   - ReadWriteMany
+# ---
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: forecasting-nfs
+#   namespace: more-demo
+# spec:
+#   storageClassName: nfs-client
+#   resources:
+#     requests:
+#       storage: 10Gi
+#   volumeMode: Filesystem
+#   accessModes:
+#    - ReadWriteMany
 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: forecasting-nfs
-  namespace: more-demo
+  name: modelardb-pvc
+  namespace: modelardb
 spec:
-  storageClassName: nfs-client
+  storageClassName: modelardb-storage
   resources:
     requests:
-      storage: 10Gi
+      storage: 100Gi
   volumeMode: Filesystem
   accessModes:
    - ReadWriteMany
