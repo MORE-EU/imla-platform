@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package api;
+
+message CsvRow {
+    int64 generated_at = 1;
+    repeated double values = 2;
+}
+
+message Message {
+    int64 message_sent_at = 1;
+    repeated CsvRow csv_rows = 2;
+}

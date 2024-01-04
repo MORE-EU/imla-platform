@@ -3,4 +3,4 @@ pyyaml
 fsspec
 ray==2.5.1
 sail[river,ray]@git+https://github.com/IBM/sail.git
-moreutils@git+https://github.com/IBM/more-utils.git
+moreutils@git+https://github.com/IBM/more-utils.git@17cc7f1caaa8b23002ec929ac5abd3367a517ff5
