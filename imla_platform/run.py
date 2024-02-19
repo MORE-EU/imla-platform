@@ -18,7 +18,7 @@ from more_utils.persistence.modelardb import ModelarDB
 from imla_platform.service import IMLAPlatform
 from imla_platform.validation import validate_host_and_port
 
-LOGGER = configure_logger(logger_name="IMLAPlatform", package_name=None)
+LOGGER = configure_logger(logger_name="IMLA Platform", package_name=None)
 
 modelardb_configs = {
     "hostname": config.MODELARDB_HOSTNAME,

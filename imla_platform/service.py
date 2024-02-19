@@ -5,7 +5,7 @@ from imla_platform.base import BaseService
 from imla_platform.parser import param_parser, flatten_list
 from more_utils.logging import configure_logger
 
-LOGGER = configure_logger(logger_name="IMLAPlatform", package_name=None)
+LOGGER = configure_logger(logger_name="IMLA Platform", package_name=None)
 
 
 class IMLAPlatform(BaseService):

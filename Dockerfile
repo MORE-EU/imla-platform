@@ -1,8 +1,8 @@
 FROM --platform=linux/amd64 python:3.10
 
 LABEL maintainer="IBM Research Europe - Ireland" \
-    name="IBM Forecasting Service" \
-    summary="Docker-based container service for SAIL library" \
+    name="IBM Scalable IMLA Platform" \
+    summary="Docker-based container service for experimenting with Incremental Machine Learning Algorithms (IMLA). It is build on top of IBM SAIL Python library." \
     vendor="IBM Corp."
 
 ENV PYTHONPATH="${PYTHONPATH}:/service"

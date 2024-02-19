@@ -12,7 +12,7 @@ from sail.telemetry import DummySpan, TracingClient
 from imla_platform.data_stream import DataStreamFactory
 from imla_platform.validation import validate_address
 
-LOGGER = configure_logger(logger_name="IMLAPlatform", package_name=None)
+LOGGER = configure_logger(logger_name="IMLA Platform", package_name=None)
 
 SERVICE_NAME = (
     os.environ.get("POD_NAME") if os.environ.get("POD_NAME") else "IMLAPlatform"
@@ -43,7 +43,7 @@ class BaseService:
         return self.message_broker.client()
 
     def create_experiment_directory(self, data_dir):
-        exp_name = "ForecastingTask" + "_" + time.strftime("%d-%m-%Y_%H:%M:%S")
+        exp_name = "IMLATask" + "_" + time.strftime("%d-%m-%Y_%H:%M:%S")
         exp_dir = os.path.join(data_dir, exp_name)
         os.umask(0)
         os.makedirs(exp_dir, mode=0o777, exist_ok=True)
@@ -148,7 +148,7 @@ class BaseService:
                 LOGGER.info(f"Telemetry service is disabled.")
 
             with self.trace(tracer, self.exp_name, current_span=True):
-                with self.trace(tracer, "Pipeline-load"):
+                with self.trace(tracer, "PIPELINE_LOAD"):
                     model = self.load_or_create_model(run_configs["sail"], tracer)
 
                 data_stream = DataStreamFactory.create_data_stream(
@@ -159,7 +159,7 @@ class BaseService:
                     run_configs["sail"]["steps"][-1]["name"]
                 )
 
-                with self.trace(tracer, "Pipeline-train", current_span=True):
+                with self.trace(tracer, "PIPELINE_TRAIN", current_span=True):
                     predictions = {}
                     for ts_batch in data_session:
                         if data_stream.validate_batch(ts_batch):
@@ -176,15 +176,15 @@ class BaseService:
 
                 # save trained model instance
                 if run_configs["save_model_after_training"]:
-                    with self.trace(tracer, "Pipeline-persist"):
+                    with self.trace(tracer, "PIPELINE_PERSIST-model"):
                         self.save_model_instance(model)
 
                 # publish predictions
-                with self.trace(tracer, "Pipeline-publish"):
+                with self.trace(tracer, "PIPELINE_PUBLISH-predictions"):
                     self.publish_predictions(predictions)
 
                 # publish evaluation
-                with self.trace(tracer, "Pipeline-publish"):
+                with self.trace(tracer, "PIPELINE_PUBLISH-evaluations"):
                     self.publish_evaluation(model.metrics)
 
                 self.send_job_response(

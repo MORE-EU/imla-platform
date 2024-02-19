@@ -145,9 +145,9 @@ sail:
   verbosity_level: 1
   verbosity_interval: 1 # default is null
   tensorboard_log_dir: /data
-  tracer: null
-    # otlp_endpoint: http://83.212.75.52:31318
-    # web_interface: http://master.more2020.eu/:31686
+  tracer:
+    otlp_endpoint: http://83.212.75.52:31318
+    web_interface: http://master.more2020.eu/:31686
 
 data_stream:
   source: modelardb # modelardb or local_file
@@ -159,7 +159,7 @@ data_stream:
   classes: [] # only applicable for classification problem and when incremental_training is enabled
   from_date: null
   to_date: null
-  data_limit: null # put null for all data
+  data_limit: 1000 # put null for all data
   data_batch_size: 250
   data_ingestion_freq: 0 #ingestion frequency in sec
 

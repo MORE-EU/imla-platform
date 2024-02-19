@@ -2,7 +2,7 @@
 version: "3.8"
 services:
   forecasting-service:
-    image: dhavalsalwala/forecasting-service:latest
+    image: dhavalsalwala/scalable-imla-platform:latest
     hostname: forecasting-service
     container_name: forecasting-service
     build:
@@ -22,7 +22,7 @@ services:
       TUNE_DISABLE_SIGINT_HANDLER: 1
     entrypoint: ["python", "imla_platform/run.py", "--data_dir", "/data"]
     volumes:
-      - ./data:/data
+      - ./data:data/
 
 networks:
   default:
