@@ -5,12 +5,12 @@ from imla_platform.base import BaseService
 from imla_platform.parser import param_parser, flatten_list
 from more_utils.logging import configure_logger
 
-LOGGER = configure_logger(logger_name="ForecastingService", package_name=None)
+LOGGER = configure_logger(logger_name="IMLAPlatform", package_name=None)
 
 
-class ForecastingService(BaseService):
+class IMLAPlatform(BaseService):
     def __init__(self, modelardb_conn, message_broker, data_dir) -> None:
-        super(ForecastingService, self).__init__(
+        super(IMLAPlatform, self).__init__(
             self.__class__.__name__,
             modelardb_conn,
             message_broker,
@@ -83,7 +83,7 @@ class ForecastingService(BaseService):
             raise Exception(f"Error in parsing configs: {str(e)}")
 
     def process_ts_batch(self, model, ts_batch, target, timestamp_col, fit_params):
-        if not super(ForecastingService, self).process_ts_batch(
+        if not super(IMLAPlatform, self).process_ts_batch(
             ts_batch, timestamp_col
         ):
             return False
@@ -113,11 +113,11 @@ class ForecastingService(BaseService):
         return predictions
 
     def send_response(self, json_message):
-        super(ForecastingService, self).send_response(json_message)
+        super(IMLAPlatform, self).send_response(json_message)
 
     def log_state(self):
-        super(ForecastingService, self).log_state()
+        super(IMLAPlatform, self).log_state()
 
     def run(self):
-        super(ForecastingService, self).run()
+        super(IMLAPlatform, self).run()
         self.run_forever(self.process_time_series)

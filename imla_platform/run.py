@@ -15,10 +15,10 @@ from more_utils.messaging import RabbitMQFactory
 from more_utils.persistence.modelardb import ModelarDB
 
 
-from imla_platform.service import ForecastingService
+from imla_platform.service import IMLAPlatform
 from imla_platform.validation import validate_host_and_port
 
-LOGGER = configure_logger(logger_name="ForecastingService", package_name=None)
+LOGGER = configure_logger(logger_name="IMLAPlatform", package_name=None)
 
 modelardb_configs = {
     "hostname": config.MODELARDB_HOSTNAME,
@@ -67,7 +67,7 @@ def run_service(data_dir):
             f"Connected to Message Broker at {config.RABBITMQ_HOST}:{config.RABBITMQ_PORT}"
         )
 
-        service = ForecastingService(
+        service = IMLAPlatform(
             modelardb_conn=modelardb_conn,
             message_broker=message_broker,
             data_dir=data_dir,

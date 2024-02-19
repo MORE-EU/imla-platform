@@ -12,10 +12,10 @@ from sail.telemetry import DummySpan, TracingClient
 from imla_platform.data_stream import DataStreamFactory
 from imla_platform.validation import validate_address
 
-LOGGER = configure_logger(logger_name="ForecastingService", package_name=None)
+LOGGER = configure_logger(logger_name="IMLAPlatform", package_name=None)
 
 SERVICE_NAME = (
-    os.environ.get("POD_NAME") if os.environ.get("POD_NAME") else "ForecastingService"
+    os.environ.get("POD_NAME") if os.environ.get("POD_NAME") else "IMLAPlatform"
 )
 
 
