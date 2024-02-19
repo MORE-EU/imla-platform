@@ -20,7 +20,7 @@ services:
       FORECASTING_CONSUMER_QUEUE: ${FORECASTING_CONSUMER_QUEUE}
       FORECASTING_PRODUCER_QUEUE: ${FORECASTING_PRODUCER_QUEUE}
       TUNE_DISABLE_SIGINT_HANDLER: 1
-    entrypoint: ["python", "forecasting_service/run.py", "--data_dir", "/data"]
+    entrypoint: ["python", "imla_platform/run.py", "--data_dir", "/data"]
     volumes:
       - ./data:/data
 

@@ -28,7 +28,7 @@ classifiers = [
 ]
 
 [tool.setuptools.dynamic]
-version = { attr = "forecasting_service.__version__" }
+version = { attr = "imla_platform.__version__" }
 readme = { file = [
     "README.md",
 ], content-type = "text/markdown" }
@@ -42,7 +42,7 @@ dev = [
 
 [tool.setuptools]
 packages = [
-    "forecasting_service",
+    "imla_platform",
 ]
 zip-safe = false
 
@@ -50,4 +50,4 @@ zip-safe = false
 repository = "https://github.com/MORE-EU/forecasting-service"
 
 [project.scripts]
-run_service = "forecasting_service.run:main"
+run_service = "imla_platform.run:main"

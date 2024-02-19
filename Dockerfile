@@ -15,10 +15,10 @@ RUN python -m pip install --no-cache-dir --upgrade -r /service/requirements.txt
 RUN python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
 
 ## add all the rest of the code
-ADD forecasting_service /service/forecasting_service
+ADD imla_platform /service/imla_platform
 
 ## Set working directory
 WORKDIR /service
 
 ## ENTRYPOINT
-ENTRYPOINT ["python", "forecasting_service/run.py"]
+ENTRYPOINT ["python", "imla_platform/run.py"]

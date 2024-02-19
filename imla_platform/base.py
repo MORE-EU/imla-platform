@@ -9,8 +9,8 @@ from more_utils.time_series import TimeseriesFactory
 from ray.tune.utils.util import SafeFallbackEncoder
 from sail.telemetry import DummySpan, TracingClient
 
-from forecasting_service.data_stream import DataStreamFactory
-from forecasting_service.validation import validate_address
+from imla_platform.data_stream import DataStreamFactory
+from imla_platform.validation import validate_address
 
 LOGGER = configure_logger(logger_name="ForecastingService", package_name=None)
 

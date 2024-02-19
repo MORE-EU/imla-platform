@@ -15,8 +15,8 @@ from more_utils.messaging import RabbitMQFactory
 from more_utils.persistence.modelardb import ModelarDB
 
 
-from forecasting_service.service import ForecastingService
-from forecasting_service.validation import validate_host_and_port
+from imla_platform.service import ForecastingService
+from imla_platform.validation import validate_host_and_port
 
 LOGGER = configure_logger(logger_name="ForecastingService", package_name=None)
 

@@ -1,8 +1,8 @@
 from sail.models.auto_ml.auto_pipeline import SAILAutoPipeline
 from sail.pipeline import SAILPipeline
 import os
-from forecasting_service.base import BaseService
-from forecasting_service.parser import param_parser, flatten_list
+from imla_platform.base import BaseService
+from imla_platform.parser import param_parser, flatten_list
 from more_utils.logging import configure_logger
 
 LOGGER = configure_logger(logger_name="ForecastingService", package_name=None)
