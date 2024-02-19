@@ -49,7 +49,7 @@ spec:
           - name: ray-output
             nfs:
               server: master.more2020.eu
-              path: /data/1/k8s/forecasting_data
+              path: /data/1/k8s/forecasting_data/trials
 
   workerGroupSpecs:
   - replicas: 5
@@ -88,4 +88,4 @@ spec:
           - name: ray-output
             nfs:
               server: master.more2020.eu
-              path: /data/1/k8s/forecasting_data
+              path: /data/1/k8s/forecasting_data/trials

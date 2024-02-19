@@ -2,33 +2,33 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: grpc-forecasting
+  name: grpc-imla-platform
   namespace: more-demo
   labels:
-    app: grpc-forecasting
+    app: grpc-imla-platform
 spec:
   replicas: 1
   selector: 
     matchLabels:
-      app: grpc-forecasting
+      app: grpc-imla-platform
   template:
     metadata:
       labels:
-        app: grpc-forecasting
+        app: grpc-imla-platform
     spec:
       nodeSelector:
         node-role.kubernetes.io/worker: ""
       containers:
       - name: grpc-forecasting-container
-        image: dhavalsalwala/forecasting-service:1.6.1
+        image: dhavalsalwala/scalable-imla-platform:1.0.0
         imagePullPolicy: IfNotPresent
         args: ["--data_dir", "/data"]
         resources: {}
         volumeMounts:
-          - name: forecasting-data
+          - name: imla-platform-data
             mountPath: /data
             subPathExpr: $(POD_NAME)
-          - name: forecasting-datasets
+          - name: imla-platform-datasets
             mountPath: /datasets
 
         env:
@@ -89,11 +89,11 @@ spec:
               key: GRPC_CONSUMER_QUEUE
 
       volumes:
-      - name: forecasting-data
+      - name: imla-platform-data
         nfs:
           server: master.more2020.eu
-          path: /data/1/k8s/forecasting_data/grpc
-      - name: forecasting-datasets
+          path: /data/1/k8s/forecasting_data/grpc_trials
+      - name: imla-platform-datasets
         nfs:
           server: master.more2020.eu
           path: /data/1/k8s/datasets

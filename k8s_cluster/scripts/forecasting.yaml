@@ -2,41 +2,41 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: forecasting
+  name: imla-platform
   namespace: more-demo
   labels:
-    app: forecasting
+    app: imla-platform
 spec:
-  replicas: 354
+  replicas: 1
   selector: 
     matchLabels:
-      app: forecasting
+      app: imla-platform
   template:
     metadata:
       labels:
-        app: forecasting
+        app: imla-platform
     spec:
       nodeSelector:
         node-role.kubernetes.io/worker: ""
       containers:
-      - name: forecasting-container
-        image: dhavalsalwala/forecasting-service:1.6.1
+      - name: imla-platform-container
+        image: dhavalsalwala/scalable-imla-platform:1.1.0
         imagePullPolicy: IfNotPresent
         args: ["--data_dir", "/data"]
-        resources:
-          requests:
-            memory: "450Mi"
-            cpu: "207m"
-          limits:
-            memory: "450Mi"
-            cpu: "207m"
+        # resources:
+        #   requests:
+        #     memory: "450Mi"
+        #     cpu: "207m"
+        #   limits:
+        #     memory: "450Mi"
+        #     cpu: "207m"
         volumeMounts:
-          - name: forecasting-data
+          - name: imla-platform-data
             mountPath: /data
             subPathExpr: $(POD_NAME)
-          - name: forecasting-datasets
+          - name: imla-platform-datasets
             mountPath: /datasets
-          - name: forecasting-model
+          - name: imla-platform-model
             mountPath: /model_dir
         env:
         - name: POD_NAME
@@ -95,17 +95,16 @@ spec:
               name: more-configmap
               key: FORECASTING_PRODUCER_QUEUE
 
-      
       volumes:
-      - name: forecasting-data
+      - name: imla-platform-data
         nfs:
           server: master.more2020.eu
           path: /data/1/k8s/forecasting_data/trials
-      - name: forecasting-model
+      - name: imla-platform-model
         nfs:
           server: master.more2020.eu
-          path: /data/1/k8s/forecasting_data
-      - name: forecasting-datasets
+          path: /data/1/k8s/forecasting_data/model
+      - name: imla-platform-datasets
         nfs:
           server: master.more2020.eu
           path: /data/1/k8s/datasets
